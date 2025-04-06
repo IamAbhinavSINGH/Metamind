@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Message" ALTER COLUMN "modelName" DROP NOT NULL,
+ALTER COLUMN "completionTokens" DROP NOT NULL,
+ALTER COLUMN "finishReason" DROP NOT NULL,
+ALTER COLUMN "promptTokens" DROP NOT NULL,
+ALTER COLUMN "response" DROP NOT NULL,
+ALTER COLUMN "totalToknes" DROP NOT NULL;
