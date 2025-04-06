@@ -1,6 +1,6 @@
 import { StreamTextResult } from "ai";
 import { Response } from "express";
-import { ModelType } from "@repo/types/src/types/chat";
+import { ModelType } from "@repo/types/dist/chat";
 
 export const writeDataToApiResponse = async (stream : StreamTextResult<any , any> , modelUsed : ModelType , res : Response) => {
     try{

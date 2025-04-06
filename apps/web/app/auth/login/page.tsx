@@ -1,7 +1,7 @@
 "use client"
 
 import LoginComponent from "@/pages/auth/LoginComponent";
-import { ThemeToogle } from "@/pages/ThemeToggle";
+import ThemeToogle from "@/pages/ThemeToggle";
 
 export default function Signin() {
     

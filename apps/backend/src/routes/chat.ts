@@ -1,5 +1,5 @@
 import { Router , Response } from "express";
-import { AI_MODELS, chatSchema, ModelSchema  } from '@repo/types/src/types/chat';
+import { AI_MODELS, chatSchema, ModelSchema  } from '@repo/types/dist/chat';
 import { AuthRequest } from "../middleware/authMiddleware";
 import { createNewChatWithoutName, deleteChat, deleteLastMessageFromChat, getChat, getMessagesByChatId, getUser, storeUserPrompt } from "../controller/db";
 import { bigintReplacer } from '../utils/util';

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Moon , Sun } from 'lucide-react';
 import { useTheme } from "@/lib/providers/ThemeProvider";
 
-export function ThemeToogle(){
+export default function ThemeToogle(){
     const { setTheme } = useTheme();
 
     return (

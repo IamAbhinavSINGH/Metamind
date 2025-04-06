@@ -1,5 +1,5 @@
 import db from "@repo/db";
-import { ModelType } from "@repo/types/src/types/chat";
+import { ModelType } from "@repo/types/dist/chat";
 
 export interface User{
     userId : string,

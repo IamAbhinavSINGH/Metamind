@@ -1,5 +1,4 @@
 import { Router , Response } from "express";
-import z from 'zod';
 import { AuthRequest } from "../middleware/authMiddleware";
 import { deleteMessage, getUser } from "../controller/db";
 
