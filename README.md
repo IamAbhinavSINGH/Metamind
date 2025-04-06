@@ -1,84 +1,66 @@
-# Turborepo starter
+# Metamind
 
-This Turborepo starter is maintained by the Turborepo core team.
+<div align="center">
+  <img src="/placeholder.svg?height=200&width=200" alt="Metamind Logo" />
+  <h3>One platform for all your AI needs</h3>
+</div>
 
-## Using this example
+## 🧠 What is Metamind?
 
-Run the following command:
+Metamind is a unified platform that brings together all your favorite AI models in one place. It eliminates the need to switch between multiple applications and subscriptions when working with different AI models.
 
-```sh
-npx create-turbo@latest
-```
+## 🤔 Why Metamind?
 
-## What's inside?
+Have you ever found yourself jumping between ChatGPT, Claude, Midjourney, and other AI tools to get your work done? Different AI models excel at different tasks, and users often need to use multiple services to achieve their goals.
 
-This Turborepo includes the following packages/apps:
+Metamind solves this problem by:
 
-### Apps and Packages
+- Providing a single, intuitive interface for all your AI interactions
+- Eliminating the need for multiple subscriptions
+- Saving you time by keeping all your AI conversations in one place
+- Allowing you to leverage the strengths of each AI model without context switching
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+## ✨ Features
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### 🤖 Multi-Model Chat
+- Chat with any AI model of your choice with just one click
+- Seamlessly switch between models in the same conversation
+- Compare responses from different models side by side
 
-### Utilities
+### 🎨 Creative Suite
+- Generate images using your preferred AI image models
+- Create videos with state-of-the-art AI video generators
+- Edit and enhance media with specialized AI tools
 
-This Turborepo has some additional tools already setup for you:
+### 💾 Unified History
+- Access all your conversations and creations in one place
+- Organize your AI interactions by project or topic
+- Search across all your AI-generated content
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+### 💰 Simplified Billing
+- One subscription for access to multiple AI models
+- Transparent usage tracking
+- Cost-effective compared to multiple separate subscriptions
 
-### Build
+## 🛠️ Tech Stack
 
-To build all apps and packages, run the following command:
+Metamind is built with modern technologies to ensure a fast, reliable, and scalable experience:
 
-```
-cd my-turborepo
-pnpm build
-```
+- **Frontend**: Next.js, React, Tailwind CSS
+- **Backend**: Node.js, Express
+- **Database**: PostgreSQL
+- **Authentication**: NextAuth.js
+- **Deployment**: Vercel
+- **AI Integration**: OpenAI API, Anthropic API, Gemini, Deepseek and more
 
-### Develop
+## 👥 Contributing
 
-To develop all apps and packages, run the following command:
+I welcome contributions from the community! Whether it's adding support for new AI models, improving the user interface, or fixing bugs, your help is appreciated.
 
-```
-cd my-turborepo
-pnpm dev
-```
+Feel free to open issues or submit pull requests to help make Metamind even better.
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-npx turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+<div align="center">
+  <p>Built with ❤️ for AI enthusiasts everywhere</p>
+</div>
