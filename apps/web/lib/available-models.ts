@@ -1,4 +1,4 @@
-import { ModelType } from "@repo/types/dist/chat";
+import { ModelType } from "@repo/types";
 
 export interface ModelSchema {
     modelName : string,

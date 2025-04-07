@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { ModelType } from "@repo/types/dist/chat";
+import { ModelType } from "@repo/types";
 import { CoreMessage, generateObject, LanguageModelV1, streamText } from "ai";
 import { z } from "zod";
 import { getLastChats, storeMessageResponse, storeUserPrompt, updateChatName } from "./db";
