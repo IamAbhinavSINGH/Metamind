@@ -7,7 +7,10 @@ const app = express();
 dotenv.config();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin : [ "https://vericaptcha.live" , "https://www.vericaptcha.live" , "https://metamind-web.vercel.app" , "http://localhost:3000" ],
+    allowedHeaders : '*'
+}));
 
 app.use('/api/v1' , router);
 

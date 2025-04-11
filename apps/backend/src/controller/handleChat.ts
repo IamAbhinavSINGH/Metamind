@@ -164,6 +164,9 @@ export const handleRequest = async ({
         if(!success){
             for (const modelConfig of modelsToTry) {
                 if (modelConfig.modelName === initalModelToTry.modelName) continue;
+
+                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response retrying with ${modelConfig.modelName}...` , modelName : modelConfig.modelName })}\n\n`);
+
                 success = await attemptModelRequest(modelConfig.model, modelConfig.modelName as ModelType);
                 if (success) break;
             }
@@ -233,7 +236,6 @@ const getResponseUsingLLM = async({
             },
             onError : ({ error }) => {
                 console.log("An error occured while generating response : " , error);
-                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : "An error occured" , modelName : modelName })}\n\n`);
                 success = false;
             }
         });
