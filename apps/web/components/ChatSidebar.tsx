@@ -2,12 +2,13 @@
 
 import React , { useState , useEffect } from "react";
 import { Button } from "./ui/button";
-import { Search, Sidebar, SquarePen, Trash } from "lucide-react";
+import { Search, Sidebar, SquarePen, Trash, X } from "lucide-react";
 import { useSidebar } from "@/lib/providers/SidebarContext";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 export interface ChatHistory {
     id : string,
@@ -49,7 +50,7 @@ const ChatSidebar = () => {
                 </div>
             </div>
 
-            <div className="w-full flex flex-col justify-start items-center px-2">
+            <div className="w-full flex flex-col justify-start items-center pb-1 px-2 border-b border-border">
                 <Link href="/chat?mode=auto" className="p-2 hover:bg-sidebar-border rounded-md w-full flex justify-center"> <div className="text-lg font-semibold text-foreground"> Metamind </div> </Link>
                 {/* TODO : Add a button to open model for choosing different models */}
             </div>
@@ -79,6 +80,7 @@ const ChatHistoryComponent = () => {
     const [chatHistory , setChatHistory] = useState<ChatHistory[]>([]);
     const [currentChat , setCurrentChat] = useState<ChatHistory | null>(null);
     const [groupedChats, setGroupedChats] = useState<{ [key: string]: ChatHistory[] }>({});
+    const [isLoading , setIsLoading] = useState<boolean>(false);
     const session = useSession();
     const pathName = usePathname();
     const router = useRouter();
@@ -121,7 +123,15 @@ const ChatHistoryComponent = () => {
     }, [chatHistory]);
 
     // Fetch history whenever the pathname changes and then based on history choose the current chat
-    useEffect(() => { fetchHistory() }, [session , pathName]);
+    useEffect(() => { 
+        const getInitialChats = async () => {
+            setIsLoading(true);
+            await fetchHistory();
+            setIsLoading(false);
+        }
+        
+        getInitialChats();
+    }, [session , pathName]);
 
     const groupOrder = ["Today", "Yesterday", "Previous Week", "Previous"];
 
@@ -153,10 +163,18 @@ const ChatHistoryComponent = () => {
         }
     }
 
+    if(isLoading && (!chatHistory || chatHistory.length == 0)){
+        return (
+            <div className="flex-1 flex flex-col w-full h-full items-center justify-center">
+                <LoadingSpinner size="md"/>
+            </div>
+        );
+    }
+
     if(!chatHistory || chatHistory.length === 0){
         return (
           <div className="flex-1 flex flex-col w-full items-center justify-center text-foreground">
-            No Chats availaible
+                No Chats availaible
           </div>  
         );
     }
@@ -168,10 +186,10 @@ const ChatHistoryComponent = () => {
                 if (chats.length === 0) return null;
                 return (
                     <div key={groupName} className="w-full">
-                        <div className="w-full text-sm text-foreground text-center mb-1">
-                        {groupName}
+                        <div className="w-full text-sm text-muted-foreground px-4 text-start mb-1">
+                            {groupName}
                         </div>
-                        <div className="">
+                        <div>
                             {chats.map((chat) => (
                             <div
                                 key={chat.id}
@@ -212,13 +230,14 @@ const ChatName = ({
             <div className="text-foreground text-sm line-clamp-1 text-start">
                 {chat.name}
             </div>
-            <div className="w-fit flex items-center justify-end gap-1 invisible group-hover:visible transition-all duration-100">
-                <Button
-                    className=" w-8 h-8 rounded-full bg-transparent hover:bg-sidebar-border cursor-pointer"
+            <div className="w-fit flex items-center justify-end gap-1 invisible group-hover:visible ease-in-out transition-all duration-100">
+                <button
+                    className="w-6 h-6 rounded-sm bg-transparent cursor-pointer flex items-center justify-center
+                    text-muted-foreground hover:bg-pink-800 hover:text-foreground"
                     onClick={(e) => handleChatDelete(e)}
                 >
-                    <Trash className="w-4 h-4 text-muted-foreground"/>
-                </Button>
+                    <X size={17}/>
+                </button>
             </div>
         </Link>
     );

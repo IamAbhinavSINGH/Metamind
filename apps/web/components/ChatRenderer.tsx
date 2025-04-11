@@ -2,22 +2,19 @@ import React, { useEffect, useRef , useState } from "react";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import { Message } from "@/types/next-auth-extensions";
-import { fetchModelResponse } from "@/lib/ResponseHandler";
-import { SessionContextValue, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { LoadingIndicator } from "./LoadingSpinner";
 import { modelList, ModelSchema } from "@/lib/available-models";
 import axios from "axios";
-import { ModelType } from "@repo/types/src/types/chat";
+import { ModelType } from "@repo/types";
+import { getResponse } from "@/lib/getResponse";
+import { useMessageParser } from "@/lib/useMessageParser";
 
 
-const ChatRenderer = ({ 
-  messages, 
-  setMessages, 
-  chatId, 
-  refresh 
-}: { 
+const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: { 
   messages: Message[] ,
-  setMessages : (prev : Message[]) => void, 
+  initialModel : ModelType,
+  setMessages : React.Dispatch<React.SetStateAction<Message[]>>, 
   chatId : string , 
   refresh : () => void 
 }) => {
@@ -25,38 +22,22 @@ const ChatRenderer = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isLoading , setIsLoading] = useState<boolean>(false);
   const session = useSession();
+  const { parseStream } = useMessageParser({ setIsLoading , setMessages });
 
   const handleChatInput = async (prompt : string , selectedModel : ModelSchema , files : File[] | undefined) => {
     if(!prompt || prompt.length === 0 || !session.data) return;
     const model = selectedModel.modelId as ModelType;
-    await getResponse(prompt , model , setMessages , setIsLoading , false , session , chatId); 
+    await getResponse({
+      prompt : prompt,
+      selectedModel : model,
+      setMessages : setMessages,
+      setIsLoading : setIsLoading,
+      isRedirected : false,
+      session : session,
+      chatId : chatId,
+      parseStream
+    }); 
   };
-
-  const getResponse = async (
-    prompt : string ,
-    selectedModel : ModelType , 
-    setMessages: (prev: Message[]) => void , 
-    setIsLoading : (isLoading : boolean) => void,
-    isRedirected : boolean,
-    session : SessionContextValue,
-    chatId : string,
-  ) => {
-    try{
-      if(!session.data) return;
-      await fetchModelResponse({
-        prompt : prompt,
-        chatId : chatId,
-        session : session,
-        selectedModel : selectedModel,
-        setMessages: setMessages,
-        setIsLoading : setIsLoading,
-        isRedirected : isRedirected
-      });
-    }catch(err){
-      console.log("An error occured while fetching response : " , err);
-      alert("Could not fetch the response!!");
-    }
-  }
 
   const handleMessageDelete = async (messageId : string) => {
     try{
@@ -79,34 +60,39 @@ const ChatRenderer = ({
 
   useEffect(() => {
     const getResponseforFirstMessage = async () => {
-      if(!messages || messages.length === 0 || !session.data || messages.length > 1) return;
+      if(messages.length === 0 || !session.data || messages.length > 1) return;
       if(messages[0]?.response && messages[0]?.response.length > 0) return;
 
       const prompt = messages[0]?.prompt;
-      const model = messages[0]?.modelName as ModelType || modelList[0]!.modelId;
+      const model = messages[0]?.modelName as ModelType || 'auto';
       if(!prompt || prompt.length === 0) return;
 
-      await getResponse(prompt , model , setMessages , setIsLoading , true , session , chatId);
+      await getResponse({
+        prompt : prompt,
+        selectedModel : model,
+        setMessages : setMessages,
+        setIsLoading : setIsLoading,
+        isRedirected : true,
+        session : session,
+        chatId : chatId,
+        parseStream
+      });       
     }
 
     getResponseforFirstMessage();
   } , [session.status]);
 
-  // Scroll to the bottom when messages update
   useEffect(() => {
     const scrollToBottom = () => {
       if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        scrollRef.current.scroll({
+          top : scrollRef.current.scrollHeight,
+          behavior : 'smooth'
+        })
       }
     }
 
-    // Immediate scroll attempt
     scrollToBottom()
-
-    // timeout to ensure scroll happens after content renders
-    const timeoutId = setTimeout(scrollToBottom, 100)
-
-    return () => clearTimeout(timeoutId)
   }, [messages, isLoading]);
 
   useEffect(() => {
@@ -150,7 +136,7 @@ const ChatRenderer = ({
         }
         {
           isLoading && 
-          <div className="w-full flex items-center justify-start py-10">
+          <div className="w-full flex items-center justify-start pt-10">
             <LoadingIndicator isLoading={isLoading} loadingText="Generating response" />
           </div>
         }
@@ -161,7 +147,7 @@ const ChatRenderer = ({
         <ChatInput
           isLoading={isLoading}
           modelList={modelList}
-          initialModel={modelList[0]!}
+          initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
           onPromptSubmit={handleChatInput}
         />
       </div>

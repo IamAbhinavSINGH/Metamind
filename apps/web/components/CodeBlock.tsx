@@ -26,7 +26,6 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("")
   const [copied, setCopied] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const preRef = useRef<HTMLPreElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
@@ -66,7 +65,7 @@ export const CodeBlock = ({
                   : typeof node.properties.className === "string"
                     ? [node.properties.className]
                     : []
-                node.properties.className = [...classNameArray, "code-block-pre"]
+                node.properties.className = [...classNameArray, "code-block-pre overflow-auto"]
                 return node
               },
               code(node) {
@@ -78,7 +77,7 @@ export const CodeBlock = ({
                 const validClassNames = classNameArray.filter(
                   (cls) => typeof cls === "string" || typeof cls === "number",
                 )
-                node.properties.className = [...validClassNames, "code-block-code"]
+                node.properties.className = [...validClassNames, "code-block-code , overflow-auto"]
                 return node
               },
               line(node) {
@@ -87,7 +86,7 @@ export const CodeBlock = ({
                   : typeof node.properties.className === "string" || typeof node.properties.className === "number"
                     ? [node.properties.className]
                     : []
-                node.properties.className = [...classNames, "code-line"]
+                node.properties.className = [...classNames, "code-line , overflow-auto"]
                 return node
               },
             },
@@ -99,7 +98,6 @@ export const CodeBlock = ({
         }
       } catch (error) {
         console.error("Error highlighting code:", error)
-        // Fallback to plain text if highlighting fails
         if (isMounted) {
           setHtml(`<pre class="code-block-pre"><code class="code-block-code">${escapeHtml(code)}</code></pre>`)
         }
@@ -186,28 +184,10 @@ export const CodeBlock = ({
         </div>
       </div>
 
-      {/* Code content */}
-      {/* <div className="relative px-6 py-4 overflow-auto scrollbar-thin">
-        {isLoading ? (
-          <div
-            className={cn(
-              "animate-pulse p-4",
-              theme === "dark-plus" ? "bg-[#1E1E1E]" : "bg-[#FFFFFF]",
-              // Set min-height based on code length to prevent layout shifts
-              code.split("\n").length > 10 ? "h-[300px]" : "h-[150px]",
-            )}
-          />
-        ) : (
-          <div
-            className={cn("code-container text-xs font-mono", showLineNumbers && "line-numbers")}
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        )}
-      </div> */}
 
       <div className="relative px-6 py-4 overflow-auto scrollbar-thin">
         {/* Render plain text first */}
-        <pre 
+        {/* <pre 
           ref={preRef}
           className={cn(
             "absolute text-xs font-mono opacity-0 pointer-events-none",
@@ -219,12 +199,12 @@ export const CodeBlock = ({
           }}
         >
           {code}
-        </pre>
+        </pre> */}
         
         {/* Highlighted content */}
         {html && (
           <div
-            className={cn("code-container text-xs font-mono", showLineNumbers && "line-numbers")}
+            className={cn(" text-xs font-mono", showLineNumbers && "line-numbers")}
             dangerouslySetInnerHTML={{ __html: html }}
             style={{
               minWidth: dimensions.width || 'auto',

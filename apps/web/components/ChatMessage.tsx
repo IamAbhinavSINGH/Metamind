@@ -62,12 +62,12 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                 </div>
             }
             {
-                (message.error) && 
-                <div className="w-full text-foreground">
+                (message.error && (!message.response || message.response.length === 0) ) && 
+                <div className="w-fit px-4 pt-2  rounded-lg border bg-red-950">
                     <MarkdownRenderer 
                       key={`error-${message.id}`}
                       content={message.error || ''} 
-                      className="overflow-auto text-foreground" 
+                      className="overflow-auto text-foreground font-semibold text-sm" 
                       />
                 </div>
             }

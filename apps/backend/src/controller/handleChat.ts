@@ -10,7 +10,6 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 
 
-
 interface HandleRequestProps{
     prompt : string,
     chatId : string,
@@ -294,7 +293,7 @@ const initalizeChat = async ({
             modelName = response.object['modelName'] as ModelType;
         }
 
-        message = await storeUserPrompt(chatId , prompt);
+        message = await storeUserPrompt(chatId , prompt , modelName);
         if(!message || message === null) return null;
 
         return {

@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import ChatInput from "@/components/ChatInput";
 import { modelList } from "@/lib/available-models";
 import React from "react";
+import { ModelType } from "@repo/types";
 
 
 export default function (){
@@ -19,25 +20,31 @@ export default function (){
     const session = useSession();
     const searchParams = useSearchParams();
     const redirected = searchParams?.get("redirected") || null;
+    const initialModel = searchParams?.get("model") as ModelType || modelList[0];
     const [messages , setMessages] = useState<Message[]>([]);
+    const [isFalseChat , setIsFalseChat] = useState<boolean>(false);
     const [isLoading , setIsLoading] = useState<boolean>(false);
 
     const fetchChats = async () => {
         if(session.status !== 'authenticated' || !chatId) return;
 
-        // Don't set loading if we already have messages (prevents flicker on tab switch)
+        setIsFalseChat(false);
         if (messages.length === 0) {
             setIsLoading(true)
         }
+        else{
+            return;
+        }
 
         const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/${chatId}`
+
         try{
             const response = await axios.get(url , {
                 headers : { "Authorization" :  `Bearer ${session.data.user.token}` }
             })
 
             if(response.status === 200 && response.data.messages){
-                const newMessages = response.data.messages.reverse();
+                const newMessages = response.data.messages;
                 // Only update if messages have changed
                 if (JSON.stringify(newMessages) !== JSON.stringify(messages)) {
                     setMessages([...newMessages])
@@ -45,13 +52,14 @@ export default function (){
             }
 
             setIsLoading(false);
-        }catch(err){
+        }catch(err : any){
             setIsLoading(false);
-            console.log("An error occured while fetching chats : " , err);
+            if(err.response.status === 500){
+                setIsFalseChat(true);
+            }
         }
     }
 
-    // Update the useEffect to prevent unnecessary fetches on tab switches
     useEffect(() => {
         // Only fetch if session is authenticated and we don't have messages yet
         if (session.status === "authenticated" && messages.length === 0) {
@@ -65,6 +73,13 @@ export default function (){
         }
     }, [session]);
 
+    useEffect(() => {
+        if(!isLoading && isFalseChat){
+            router.push('/chat?model=auto');
+            return;
+        }
+    }, [isFalseChat]);
+
     if(!chatId || chatId === null || Array.isArray(chatId)){
         router.push("/chat?model=auto");
         return;
@@ -76,7 +91,7 @@ export default function (){
                 <div className='flex-1 w-full h-full flex items-center justify-center'>
                     <ChatInput 
                         modelList={modelList}
-                        initialModel={modelList[0]!} 
+                        initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                         onPromptSubmit={() => {}}
                     />
                 </div>
@@ -91,7 +106,7 @@ export default function (){
                 </div>
                 <div className="sticky bottom-0 bg-sidebar">
                     <ChatInput
-                        initialModel={modelList[0]!}
+                        initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                         modelList={modelList}
                         isLoading={isLoading}
                         onPromptSubmit={() => {}}
@@ -108,6 +123,7 @@ export default function (){
                 messages={messages} 
                 setMessages={setMessages}
                 chatId={chatId}
+                initialModel={initialModel}
             />
         </div>
     );

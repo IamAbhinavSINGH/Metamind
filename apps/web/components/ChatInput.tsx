@@ -17,10 +17,11 @@ interface ChatInputProps {
   initialModel : ModelSchema | null
   onPromptSubmit: (prompt: string , selectedModel : ModelSchema , files?: File[]) => void
   maxLength?: number,
-  isLoading?: boolean
+  isLoading?: boolean,
+  onModelChange? : (model : string) => void
 }
 
-export default function ChatInput({ modelList, initialModel , onPromptSubmit, maxLength = 4000 , isLoading }: ChatInputProps) {
+export default function ChatInput({ modelList, initialModel , onPromptSubmit, maxLength = 4000 , isLoading , onModelChange }: ChatInputProps) {
   const [prompt, setPrompt] = useState<string>("")
   const [files, setFiles] = useState<File[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -95,6 +96,13 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
     }
   }
 
+  const handleModelChange = (model : ModelSchema) => {
+    setSelectedModel(model);
+    if(onModelChange && onModelChange !== null){
+      onModelChange(model.modelId);
+    }
+  }
+
   return (
     <div className="w-full flex flex-col">
       <div className="w-full max-w-3xl mx-auto bg-accent border-border rounded-3xl z-10 shadow">
@@ -160,7 +168,7 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
                   <SelectModel 
                       modelList={modelList}
                       selectedModel={selectedModel}
-                      setSelectedModel={setSelectedModel}
+                      setSelectedModel={handleModelChange}
                   />
 
                   <div className="w-full flex items-end justify-end gap-2">

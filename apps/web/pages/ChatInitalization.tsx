@@ -8,9 +8,10 @@ import { modelList, ModelSchema } from '@/lib/available-models';
 
 interface ChatInitializationProps {
     initialModel: ModelType;
+    onModelChange : (model : string) => void
 }
 
-const ChatInitialization = ({ initialModel } : ChatInitializationProps) => {
+const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializationProps) => {
     const session = useSession();
     const router = useRouter();
 
@@ -22,9 +23,10 @@ const ChatInitialization = ({ initialModel } : ChatInitializationProps) => {
                     "Authorization" : `Bearer ${session.data?.user.token}`
                 }
             }); 
+            const chatId = response.data.chatId;
 
             if(response.status === 200 && response.data){
-                router.push(`/chat/${response.data.chatId}?redirected=true`);
+                router.push(`/chat/${chatId}?redirected=true&model=${selectedModel.modelId}`);
             }
 
         }catch(err){
@@ -39,6 +41,7 @@ const ChatInitialization = ({ initialModel } : ChatInitializationProps) => {
                     modelList={modelList}
                     initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                     onPromptSubmit={handleSubmit} 
+                    onModelChange={onModelChange}
                 />
             </div>
         </div>

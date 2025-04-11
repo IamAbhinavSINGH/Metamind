@@ -195,14 +195,14 @@ export const getChats = async(userId : string) => {
     }
 }
 
-export const getMessagesByChatId = async (chatId : string) => {
+export const getMessagesByChatId = async (chatId : string , userId : string) => {
     try{
-        const chat = await db.chat.findFirst({ where : { id : chatId } });
+        const chat = await db.chat.findFirst({ where : { id : chatId , userId : userId } });
         if(!chat || chat === null) return null;
 
         const messages = await db.message.findMany({
             where : { chatId : chatId },
-            orderBy : { createdAt : 'desc' },
+            orderBy : { createdAt : 'asc' },
             select : {
                 id : true,
                 prompt : true,
@@ -267,12 +267,13 @@ export const updateChatName = async (chatId : string , chatName : string) => {
     }
 }
 
-export const storeUserPrompt = async(chatId : string , userPrompt : string) => {
+export const storeUserPrompt = async(chatId : string , userPrompt : string , modelName : ModelType) => {
     try{
         const message = await db.message.create({ 
             data : {
                 chatId : chatId,
-                prompt : userPrompt
+                prompt : userPrompt,
+                modelName : modelName
             }
         });
 

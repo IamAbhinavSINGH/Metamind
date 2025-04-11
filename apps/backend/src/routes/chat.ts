@@ -47,7 +47,7 @@ chatRouter.post('' , async (req : AuthRequest , res : Response) => {
 
         var isFirstRequestForThisChat = false;
         if(body.redirected){
-            const { message , error } = await deleteLastMessageFromChat(body.chatId , userId);
+            const { message } = await deleteLastMessageFromChat(body.chatId , userId);
             if(message !== null) isFirstRequestForThisChat = true;
         }
 
@@ -84,7 +84,7 @@ chatRouter.get('/:chatId' , async (req : AuthRequest , res : Response) => {
             return;
         }
         
-        const messages = await getMessagesByChatId(chatId);
+        const messages = await getMessagesByChatId(chatId , userId);
         if(!messages || messages === null){
             res.status(500).json({ error : "Chat doesn't exist!!" });
             return;
@@ -143,12 +143,12 @@ chatRouter.post('/create' , async (req : AuthRequest , res : Response) => {
         }
         const body = parsedSchema.data;
 
-        const chat = await createNewChatWithoutName({ userId : userId});
+        const chat = await createNewChatWithoutName({ userId : userId });
         if (!chat || chat.id === null) {
             throw new Error("Transaction failed: Could not create chat");
         }
 
-        const message = await storeUserPrompt(chat.id, body.prompt);
+        const message = await storeUserPrompt(chat.id, body.prompt , body.modelName);
         if(!message || message == null) throw new Error("Transaction failed: Could not create chat");
 
         res.json({ chatId: chat.id, chatName: chat.name });
