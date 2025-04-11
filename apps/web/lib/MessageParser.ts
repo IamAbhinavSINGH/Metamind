@@ -41,7 +41,6 @@ export class MessageParser {
 
                 try{    
                     const { type , content } = JSON.parse(match[1]);
-                    console.log("type , content : " , type , content);
 
                     switch(type){
                         case 'messageId' : {
@@ -70,7 +69,6 @@ export class MessageParser {
                         }
 
                         case 'error' : {
-                            console.log("error in Message parser : " , content);
                             this._options.callbacks?.onError?.(content);
                             break;
                         }

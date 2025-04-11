@@ -54,7 +54,7 @@ export default function (){
             setIsLoading(false);
         }catch(err : any){
             setIsLoading(false);
-            if(err.response.status === 500){
+            if(err.response?.status === 500){
                 setIsFalseChat(true);
             }
         }
