@@ -1,5 +1,5 @@
 import ChatInput from '@/components/ChatInput';
-import React from 'react';
+import React , { useState } from 'react';
 import { ModelType } from '@repo/types/src/types/chat'
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
@@ -14,10 +14,13 @@ interface ChatInitializationProps {
 const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializationProps) => {
     const session = useSession();
     const router = useRouter();
+    const [isLoading , setIsLoading] = useState<boolean>(false);
 
     const handleSubmit = async(prompt : string , selectedModel : ModelSchema , files : File[] | undefined) => {
         try{
+            setIsLoading(true);
             const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/create`;
+
             const response = await axios.post(url , { prompt , modelName : selectedModel.modelId } , {
                 headers : {
                     "Authorization" : `Bearer ${session.data?.user.token}`
@@ -32,6 +35,7 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
         }catch(err){
             console.log("An error has occured while initalizing a chat : " , err);
         }
+        finally { setIsLoading(false); }
     }
 
     return (
@@ -42,6 +46,7 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
                     initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                     onPromptSubmit={handleSubmit} 
                     onModelChange={onModelChange}
+                    isLoading={isLoading}
                 />
             </div>
         </div>

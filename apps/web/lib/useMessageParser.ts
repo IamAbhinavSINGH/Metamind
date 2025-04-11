@@ -57,6 +57,7 @@ export const useMessageParser = ({
         } , [setIsLoading , setMessages]),
 
         onFinish : useCallback((details : OnFinishCallbackProps) => {
+            setIsLoading(false);
             setMessages((prev : Message[]) => {
                 if(prev.length === 0) return prev;
                 const lastIndex = prev.length-1;
@@ -79,7 +80,7 @@ export const useMessageParser = ({
             })
         }, [setMessages]),
 
-        onError : useCallback((error : Error) => {
+        onError : useCallback((errorMessage : string) => {
             setMessages((prev : Message[]) => {
                 if(prev.length === 0) return prev;
                 const lastIndex = prev.length - 1;
@@ -87,7 +88,7 @@ export const useMessageParser = ({
 
                 return [
                     ...prev.slice(0 , lastIndex),
-                    ({ ...currentMessage , error : error.message }) as Message
+                    ({ ...currentMessage , error : errorMessage }) as Message
                 ]
             })
         }, [setMessages]) 

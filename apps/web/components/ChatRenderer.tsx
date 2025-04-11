@@ -136,7 +136,7 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
         }
         {
           isLoading && 
-          <div className="w-full flex items-center justify-start pt-10">
+          <div className="w-full flex items-center justify-start">
             <LoadingIndicator isLoading={isLoading} loadingText="Generating response" />
           </div>
         }

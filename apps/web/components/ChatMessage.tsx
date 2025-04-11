@@ -45,30 +45,31 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
     }, []);
 
     return (
-        <div ref={divRef} className="w-full flex flex-col justify-start group bg-sidebar">
-            <div className="w-full flex items-center justify-end mb-10">
+        <div ref={divRef} className="w-full flex flex-col justify-start group">
+            <div className="w-full flex items-center justify-end">
                 <div className="max-w-[70%] rounded-2xl bg-accent h-fit p-4 text-accent-foreground">
                     {message.prompt}
                 </div>
             </div>
 
+            {
+              (message.error && (!message.response || message.response.length === 0)) && 
+                <div className="w-fit px-4 pt-2 mt-4 rounded-lg border bg-red-950">
+                    <MarkdownRenderer 
+                      key={`error-${message.id}`}
+                      content={message.error || ''} 
+                      className="overflow-auto text-foreground font-semibold text-sm" 
+                    />
+                </div>
+            }
+
             {message.response && 
-                <div className="w-full text-foreground">
+                <div className="w-full mt-4 text-foreground">
                     <MarkdownRenderer 
                       key={`markdown-${message.id}`}
                       content={message.response || ''} 
                       className="overflow-auto text-foreground" 
                     />
-                </div>
-            }
-            {
-                (message.error && (!message.response || message.response.length === 0) ) && 
-                <div className="w-fit px-4 pt-2  rounded-lg border bg-red-950">
-                    <MarkdownRenderer 
-                      key={`error-${message.id}`}
-                      content={message.error || ''} 
-                      className="overflow-auto text-foreground font-semibold text-sm" 
-                      />
                 </div>
             }
             {  

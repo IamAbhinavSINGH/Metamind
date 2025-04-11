@@ -37,15 +37,15 @@ export const getResponse = async({
                     prompt,
                     response: '',
                     reasoning: '',
-                    messageId: '',
                     sources: [],
+                    error : '',
                     modelName: '',
                     finishReason: '',
                     totalTokens: 0,
                     completionTokens: 0,
                     promptTokens: 0,
                     responseTime: 0
-                }
+                } as Message
             ];
         });
 

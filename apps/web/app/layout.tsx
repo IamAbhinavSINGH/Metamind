@@ -15,6 +15,10 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Metamind",
   description: "An all in one app for AI models",
+  icons : {
+    icon : '/favicon.png',
+    apple : '/favicon.png'
+  }
 };
 
 export default function RootLayout({
