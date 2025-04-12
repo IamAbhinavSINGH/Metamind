@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react"
 import Scene from "@/pages/scene"
 import { motion, useScroll, useTransform, useInView } from "framer-motion"
 import { MessageSquare, Image, Video, Brain, Zap, Lock } from "lucide-react"
+import axios from "axios"
 
 const LandingPage = () => {
   const heroRef = useRef(null)
@@ -30,6 +31,15 @@ const LandingPage = () => {
 
   // Mouse parallax effect for hero section
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    // This request is made so that the backend can boot before the user goes to chat page
+    const checkStatus = async () => {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}`);
+    }
+
+    checkStatus();
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e : any) => {
