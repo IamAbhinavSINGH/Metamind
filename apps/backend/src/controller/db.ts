@@ -1,5 +1,6 @@
 import db from "@repo/db";
 import { ModelType } from "@repo/types";
+import { FileMetaData } from "./handleChat";
 
 export interface User{
     userId : string,
@@ -11,7 +12,8 @@ export interface User{
 
 export interface MessageType{
     prompt : string,
-    response : string | null
+    response : string | null,
+    attachments : FileMetaData[] | null,
 }
 
 export interface StoreMessageProps{
@@ -41,17 +43,15 @@ export const getLastChats = async (chatId : string) : Promise<MessageType[]>  =>
                 messages : { 
                     select : {
                         prompt : true,
-                        response : true
+                        response : true,
+                        attachments : true
                     },
                     orderBy : { createdAt : 'desc' },
                 }
             }
         });
 
-        if(chat){
-            return chat.messages
-        }
-
+        if(chat) return chat.messages
         return [];
     }catch(err){
         console.log("An error occured while fetching last chats : " , err);
@@ -215,7 +215,8 @@ export const getMessagesByChatId = async (chatId : string , userId : string) => 
                 promptTokens : true,
                 liked : true,
                 finishReason : true,
-                modelName : true
+                modelName : true,
+                attachments : true
             }
         });
 
@@ -267,14 +268,24 @@ export const updateChatName = async (chatId : string , chatName : string) => {
     }
 }
 
-export const storeUserPrompt = async(chatId : string , userPrompt : string , modelName : ModelType) => {
+export const storeUserPrompt = async(chatId : string , userPrompt : string , modelName : ModelType , attachments? : FileMetaData[]) => {
     try{
         const message = await db.message.create({ 
             data : {
                 chatId : chatId,
                 prompt : userPrompt,
-                modelName : modelName
-            }
+                modelName : modelName,
+                attachments : attachments ? {
+                    create : attachments.map((file) => ({
+                        fileName : file.fileName,
+                        fileId : file.fileId,
+                        fileType : file.fileType,
+                        fileSize : file.fileSize,
+                        fileKey : file.fileKey
+                    }))
+                } : undefined
+            },
+            include : { attachments : true }
         });
 
         return message;

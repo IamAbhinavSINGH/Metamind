@@ -1,14 +1,21 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { ModelType } from "@repo/types";
-import { CoreMessage, generateObject, LanguageModelV1, streamText } from "ai";
+import { CoreMessage, FilePart, generateObject, ImagePart, LanguageModelV1, streamText, UserContent } from "ai";
 import { z } from "zod";
 import { getLastChats, storeMessageResponse, storeUserPrompt, updateChatName } from "./db";
-import { convertChatsToCoreMessages } from "../utils/util";
+import { convertChatsToCoreMessages, pushUserMessage } from "../utils/util";
 import { Response } from "express";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 
+export interface FileMetaData{
+    fileName : string,
+    fileId : string | null,
+    fileType : string,
+    fileSize : string | null,
+    fileKey : string
+}
 
 interface HandleRequestProps{
     prompt : string,
@@ -16,7 +23,8 @@ interface HandleRequestProps{
     userId : string,
     firstRequest : boolean,
     model : ModelType,
-    expressResponse : Response
+    expressResponse : Response,
+    attachments? : FileMetaData[]
 }
 
 interface InitializeChatProps{
@@ -24,7 +32,8 @@ interface InitializeChatProps{
     prompt : string,
     userId : string,
     model : ModelType,
-    firstRequest : boolean
+    firstRequest : boolean,
+    attachments? : FileMetaData[]
 }
 
 interface GetResponseProps {
@@ -89,7 +98,7 @@ const availableModels: ModelDescription[] = [
         It allows users to toggle between rapid responses and in-depth, step-by-step analysis,
         excelling in complex coding, strategic problem-solving, and creative content generation, although it may sometimes overthink simple queries.`
     }
-  ];
+];
 
 const systemPrompt = `
     You are an AI assistant designed to analyze user prompts and determine the most suitable AI model to handle them effectively. 
@@ -109,18 +118,18 @@ const systemPrompt = `
     ${JSON.stringify(availableModels, null, 2)}
 `;
 
-
 export const handleRequest = async ({ 
     prompt ,
     chatId ,
     userId ,
     firstRequest ,
     expressResponse,
-    model
+    model,
+    attachments
  } : HandleRequestProps ) => {
     try{
         
-        const initResponse = await initalizeChat({ chatId , prompt , userId , model , firstRequest });
+        const initResponse = await initalizeChat({ chatId , prompt , userId , model , firstRequest , attachments });
         if(!initResponse || initResponse === null) return null;
 
         const askRequestProps = {
@@ -146,6 +155,7 @@ export const handleRequest = async ({
         }
 
         expressResponse.write(`data: ${JSON.stringify({ type: "messageId", content: initResponse.message.id })}\n\n`);
+        expressResponse.write(`data: ${JSON.stringify({ type: "attachments", content: initResponse.message.attachments })}\n\n`);
 
         const modelsToTry : { model : LanguageModelV1 , modelName : ModelType }[] = [
             { model : models.geminiProModel , modelName : 'gemini-2.0-pro-exp-02-05' },
@@ -259,18 +269,17 @@ const initalizeChat = async ({
     chatId ,
     prompt ,
     model , 
-    firstRequest
+    firstRequest,
+    attachments
 } : InitializeChatProps) => {
     try{
         const gemini = createGoogleGenerativeAI({ apiKey : process.env.GEMINI_KEY });
         var modelName = model;
         var message = null;
-        var chat = null;
 
         const pastConversation = await getLastChats(chatId);
-        const pastMessages : CoreMessage[] = convertChatsToCoreMessages(pastConversation);
-        pastMessages.push({ role : 'user' , content : prompt });
-        console.log("size of past chats : " , pastMessages.length);
+        const pastMessages : CoreMessage[] = await convertChatsToCoreMessages(pastConversation);
+        await pushUserMessage(pastMessages , prompt , attachments || []);
 
         if(firstRequest){
             const response = await generateObject({
@@ -282,7 +291,7 @@ const initalizeChat = async ({
             });
 
             const chatName = response.object['chatName'];
-            chat = await updateChatName(chatId , chatName);
+            await updateChatName(chatId , chatName);
         }
 
         if(model === 'auto'){
@@ -295,7 +304,7 @@ const initalizeChat = async ({
             modelName = response.object['modelName'] as ModelType;
         }
 
-        message = await storeUserPrompt(chatId , prompt , modelName);
+        message = await storeUserPrompt(chatId , prompt , modelName , attachments);
         if(!message || message === null) return null;
 
         return {

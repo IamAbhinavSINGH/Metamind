@@ -1,5 +1,5 @@
 import { Router , Response } from "express";
-import { AI_MODELS, chatSchema, ModelSchema  } from '@repo/types';
+import { AI_MODELS, chatSchema, ModelSchema, attachmentModel  } from '@repo/types';
 import { AuthRequest } from "../middleware/authMiddleware";
 import { createNewChatWithoutName, deleteChat, deleteLastMessageFromChat, getChat, getMessagesByChatId, getUser, storeUserPrompt } from "../controller/db";
 import { bigintReplacer } from '../utils/util';
@@ -8,7 +8,11 @@ import { handleRequest } from "../controller/handleChat";
 
 export const chatRouter = Router();
 
-const createChatScehma = z.object({ prompt : z.string() , modelName : z.enum(AI_MODELS) });
+const createChatScehma = z.object({ 
+    prompt : z.string(), 
+    modelName : z.enum(AI_MODELS),
+    attachments : z.array(attachmentModel).optional() 
+});
 
 
 chatRouter.post('' , async (req : AuthRequest , res : Response) => {
@@ -57,7 +61,8 @@ chatRouter.post('' , async (req : AuthRequest , res : Response) => {
             userId : user.userId,
             firstRequest : isFirstRequestForThisChat,
             model : modelParsedSchema.data,
-            expressResponse : res
+            expressResponse : res,
+            attachments : body.attachments
         });
 
         res.end();
@@ -148,7 +153,7 @@ chatRouter.post('/create' , async (req : AuthRequest , res : Response) => {
             throw new Error("Transaction failed: Could not create chat");
         }
 
-        const message = await storeUserPrompt(chat.id, body.prompt , body.modelName);
+        const message = await storeUserPrompt(chat.id, body.prompt , body.modelName , body.attachments);
         if(!message || message == null) throw new Error("Transaction failed: Could not create chat");
 
         res.json({ chatId: chat.id, chatName: chat.name });

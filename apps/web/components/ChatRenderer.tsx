@@ -1,6 +1,6 @@
 import React, { useEffect, useRef , useState } from "react";
 import ChatMessage from "./ChatMessage";
-import ChatInput from "./ChatInput";
+import ChatInput, { FileMetaData } from "./ChatInput";
 import { Message } from "@/types/next-auth-extensions";
 import { useSession } from "next-auth/react";
 import { LoadingIndicator } from "./LoadingSpinner";
@@ -24,9 +24,10 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
   const session = useSession();
   const { parseStream } = useMessageParser({ setIsLoading , setMessages });
 
-  const handleChatInput = async (prompt : string , selectedModel : ModelSchema , files : File[] | undefined) => {
+  const handleChatInput = async (prompt : string , selectedModel : ModelSchema , attachments : FileMetaData[] | undefined) => {
     if(!prompt || prompt.length === 0 || !session.data) return;
     const model = selectedModel.modelId as ModelType;
+
     await getResponse({
       prompt : prompt,
       selectedModel : model,
@@ -35,7 +36,8 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
       isRedirected : false,
       session : session,
       chatId : chatId,
-      parseStream
+      parseStream,
+      attachments : attachments
     }); 
   };
 
@@ -73,9 +75,10 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
         setMessages : setMessages,
         setIsLoading : setIsLoading,
         isRedirected : true,
-        session : session,
+        session : session, 
         chatId : chatId,
-        parseStream
+        parseStream : parseStream,
+        attachments : messages[0]?.attachments || []
       });       
     }
 
@@ -141,9 +144,9 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
           </div>
         }
       </div>
-      <div className="absolute top-0 left-0 w-full h-10 pointer-events-none bg-gradient-to-b from-sidebar to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-10 pointer-events-none bg-gradient-to-b from-sidebar-accent to-transparent" />
       
-      <div className="sticky bottom-0 bg-sidebar">
+      <div className="sticky bottom-0 bg-sidebar-accent">
         <ChatInput
           isLoading={isLoading}
           modelList={modelList}

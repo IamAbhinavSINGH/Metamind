@@ -51,6 +51,18 @@ model Message {
   totalTokens       BigInt?
   responseTime      Int?
   liked             Boolean?
+  attachments        Attachment[]
+}
+
+model Attachment {
+  id                String      @id     @default(uuid())
+  messageId         String
+  message           Message     @relation(fields: [messageId] , references: [id] , onDelete: Cascade)
+  fileName          String
+  fileType          String  
+  fileSize          String?
+  fileKey           String
+  fileId            String?
 }
 
 enum Author {

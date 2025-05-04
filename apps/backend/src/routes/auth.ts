@@ -89,6 +89,8 @@ authRouter.post('/login' , async (req : Request , res : Response) => {
         const newToken = generateToken({ userId : existingUser.id }); 
        const user = await db.user.update({ where : { id : existingUser.id } , data : { token : newToken } });
 
+       console.log('login api hit , login succesfull : ' , newToken , user.name);
+
         res.json({
             message : "Login successfull!!",
             token : newToken,

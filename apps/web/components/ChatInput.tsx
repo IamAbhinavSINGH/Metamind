@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Paperclip, X, FileText, Image, Film, File, SendIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,22 +10,34 @@ import { DropdownMenu } from "./ui/dropdown-menu"
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ModelSchema } from "@/lib/available-models"
 import { LoadingSpinner } from "./LoadingSpinner"
+import axios from "axios"
+import { useSession } from "next-auth/react"
 
 interface ChatInputProps {
   modelList: ModelSchema[]
   initialModel : ModelSchema | null
-  onPromptSubmit: (prompt: string , selectedModel : ModelSchema , files?: File[]) => void
+  onPromptSubmit: (prompt: string , selectedModel : ModelSchema , files?: FileMetaData[]) => void
   maxLength?: number,
   isLoading?: boolean,
   onModelChange? : (model : string) => void
 }
 
+export interface FileMetaData{
+  file : File,
+  isLoading : boolean,
+  uploadURL : string | null,
+  objectKey : string | null,
+  fileId : string | null
+}
+
+
 export default function ChatInput({ modelList, initialModel , onPromptSubmit, maxLength = 4000 , isLoading , onModelChange }: ChatInputProps) {
-  const [prompt, setPrompt] = useState<string>("")
-  const [files, setFiles] = useState<File[]>([])
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [prompt, setPrompt] = useState<string>("");
+  const [files, setFiles] = useState<FileMetaData[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel , setSelectedModel] = useState<ModelSchema>(initialModel ? initialModel : modelList[0]!);
+  const session = useSession();
 
   // Auto-resize the textarea as user types
   useEffect(() => {
@@ -37,6 +48,37 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
     }
   }, [prompt])
 
+  useEffect(() => {
+    const pendingFiles = files.filter(item => item.isLoading);
+    if(pendingFiles.length === 0 || !session.data) return;
+
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/file`;
+    const headers = { "Authorization" : `Bearer ${session.data.user.token}` };
+
+    pendingFiles.forEach(async (_item) => {
+      const dataToPost = { fileName : _item.file.name, fileSize : _item.file.size.toString() , fileType : _item.file.type };
+      try{
+        const response = await axios.post(url , dataToPost , { headers });
+
+        if(response.status === 200 && response.data){
+          _item.fileId = response.data.fileId;
+          _item.uploadURL = response.data.url;
+          _item.objectKey = response.data.key;
+
+          const uploadResponse = await axios.put(_item.uploadURL! , _item.file , { headers : {
+            "Content-Type" : _item.file.type
+          }});
+        }
+
+      }catch(err){
+        console.log("An error occured while fetching upload url : " , err);
+      }
+      finally{           
+        _item.isLoading = false; 
+      }
+    });
+  }, [files]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (prompt.trim() === "" && files.length === 0) return
@@ -45,10 +87,21 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
     setFiles([]);
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files)
-      setFiles((prev) => [...prev, ...newFiles])
+      const newFiles = Array.from(e.target.files);
+      setFiles((prev) => [
+        ...prev,
+        ...newFiles.map((file) => {
+          return {
+            file : file,
+            isLoading : true,
+            uploadURL : null,
+            objectKey : null,
+            fileId : null
+          } as FileMetaData
+        })
+      ]);
     }
   }
 
@@ -105,7 +158,7 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
 
   return (
     <div className="w-full flex flex-col">
-      <div className="w-full max-w-3xl mx-auto bg-accent border-border rounded-3xl z-10 shadow">
+      <div className="w-full max-w-3xl mx-auto bg-sidebar-border/90 border border-border rounded-3xl z-20 shadow">
         <form onSubmit={handleSubmit} className="py-1 px-4">
           {files.length > 0 && (
               <div className="mb-3">
@@ -113,10 +166,10 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
                   <div className="flex flex-wrap gap-1">
                   {files.map((file, index) => (
                       <div key={index} className="group relative hover:bg-border flex items-center gap-1 bg-muted p-2 rounded-md text-sm">
-                        {getFilePreview(file) || (
+                        {getFilePreview(file.file) || (
                             <div className="flex items-center gap-1.5">
-                            {getFileIcon(file)}
-                              <span className="max-w-[150px] truncate">{file.name}</span>
+                            {getFileIcon(file.file)}
+                              <span className="max-w-[150px] truncate">{file.file.name}</span>
                             </div>
                         )}
                         <Button
@@ -138,7 +191,7 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
               <div>
                   <ScrollArea
                       className={cn(
-                      "w-full bg-accent px-3 py-2 mt-2",
+                      "w-full bg-transparent px-3 py-2 mt-2",
                       "focus:outline-none"
                       )}
                   >

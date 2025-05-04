@@ -24,7 +24,7 @@ const ChatSidebar = () => {
     const session = useSession();
 
     return (
-        <div className={`max-w-[250px] h-full w-full flex flex-col items-start bg-sidebar-accent transition-all duration-500 border-r border-border
+        <div className={`max-w-[250px] h-full w-full flex flex-col items-start bg-sidebar transition-all duration-500 border-r border-border
             ${isExpanded ? '' : '-translate-x-full'}`}
         >
             <div className="w-full flex items-center justify-between gap-4 px-2 pt-2">
@@ -232,11 +232,11 @@ const ChatName = ({
             </div>
             <div className="w-fit flex items-center justify-end gap-1 invisible group-hover:visible ease-in-out transition-all duration-100">
                 <button
-                    className="w-6 h-6 rounded-sm bg-transparent cursor-pointer flex items-center justify-center
-                    text-muted-foreground hover:bg-pink-800 hover:text-foreground"
+                    className="w-6 h-6 rounded bg-transparent cursor-pointer flex items-center justify-center
+                    text-muted-foreground hover:bg-pink-700 hover:text-white"
                     onClick={(e) => handleChatDelete(e)}
                 >
-                    <X size={17}/>
+                    <X size={18}/>
                 </button>
             </div>
         </Link>

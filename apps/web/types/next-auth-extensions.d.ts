@@ -1,3 +1,5 @@
+import { FileMetaData } from "@/components/ChatInput";
+import { Attachment } from "@/lib/getResponse";
 import NextAuth from "next-auth";
 
 declare module "next-auth" {
@@ -25,6 +27,7 @@ export interface Message {
     liked? : boolean | null,
     finishReason? : string | null,
     modelName? : string | null,
+    attachments? : Attachment[] | null
     sources?: string[]; // New field for sources
     error?: string; // New field for error messages
 }

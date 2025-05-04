@@ -29,12 +29,8 @@ export default function (){
         if(session.status !== 'authenticated' || !chatId) return;
 
         setIsFalseChat(false);
-        if (messages.length === 0) {
-            setIsLoading(true)
-        }
-        else{
-            return;
-        }
+        if (messages.length === 0) setIsLoading(true)
+        else return;
 
         const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/${chatId}`
 
@@ -54,9 +50,7 @@ export default function (){
             setIsLoading(false);
         }catch(err : any){
             setIsLoading(false);
-            if(err.response?.status === 500){
-                setIsFalseChat(true);
-            }
+            if(err.response?.status === 500)setIsFalseChat(true);
         }
     }
 
@@ -117,7 +111,7 @@ export default function (){
     }
 
     return (
-        <div className="w-full px-4 md:px-8 lg:px-12 h-screen bg-sidebar">
+        <div className="w-full px-4 md:px-8 lg:px-12 h-screen bg-sidebar-accent">
             <ChatRenderer 
                 refresh={fetchChats}
                 messages={messages} 

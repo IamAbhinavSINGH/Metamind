@@ -11,13 +11,21 @@ export const AI_MODELS = [
     "claude-3-5-sonnet-latest",
     "claude-3-7-sonnet-20250219",
   ] as const;
-  
-  export const ModelSchema = z.enum(AI_MODELS);
-  export type ModelType = z.infer<typeof ModelSchema>;
 
+export const ModelSchema = z.enum(AI_MODELS);
+export type ModelType = z.infer<typeof ModelSchema>;
+
+export const attachmentModel = z.object({
+  fileName : z.string(),
+  fileId : z.string(),
+  fileType : z.string(),
+  fileSize : z.string(),
+  fileKey : z.string()
+})
 
 export const chatSchema = z.object({
   chatId : z.string(),
   prompt : z.string(),
-  redirected : z.boolean().optional()
+  redirected : z.boolean().optional(),
+  attachments : z.array(attachmentModel).optional()
 });

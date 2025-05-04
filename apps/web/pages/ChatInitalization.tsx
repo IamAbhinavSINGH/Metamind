@@ -1,10 +1,17 @@
-import ChatInput from '@/components/ChatInput';
+import ChatInput, { FileMetaData } from '@/components/ChatInput';
 import React , { useState } from 'react';
-import { ModelType } from '@repo/types/src/types/chat'
+import { ModelType } from '@repo/types'
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { modelList, ModelSchema } from '@/lib/available-models';
+import { Attachment } from '@/lib/getResponse';
+
+interface CreateChatRequestBody{
+    prompt : string,
+    modelName : string,
+    attachments? : Attachment[]
+}
 
 interface ChatInitializationProps {
     initialModel: ModelType;
@@ -16,12 +23,28 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
     const router = useRouter();
     const [isLoading , setIsLoading] = useState<boolean>(false);
 
-    const handleSubmit = async(prompt : string , selectedModel : ModelSchema , files : File[] | undefined) => {
+    const handleSubmit = async(prompt : string , selectedModel : ModelSchema , attachments : FileMetaData[] | undefined) => {
         try{
             setIsLoading(true);
             const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/create`;
+            const dataToSend : CreateChatRequestBody  = {
+                prompt : prompt,
+                modelName : selectedModel.modelId,
+            }
 
-            const response = await axios.post(url , { prompt , modelName : selectedModel.modelId } , {
+            if(attachments && attachments.length > 0){
+                dataToSend.attachments = attachments.map((file) =>  {
+                    return {
+                        fileName : file.file.name,
+                        fileType : file.file.type,
+                        fileSize : file.file.size.toString(),
+                        fileId : file.fileId || '',
+                        fileKey : file.objectKey || ''
+                    };
+                });
+            }
+
+            const response = await axios.post(url , dataToSend , {
                 headers : {
                     "Authorization" : `Bearer ${session.data?.user.token}`
                 }

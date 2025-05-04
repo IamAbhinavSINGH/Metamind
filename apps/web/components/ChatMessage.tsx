@@ -2,11 +2,14 @@ import { Message } from "@/types/next-auth-extensions";
 import React from "react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { Button } from "./ui/button";
-import { BadgeInfo, CheckCheck, Copy, Trash } from "lucide-react";
+import { BadgeInfo, CheckCheck, Copy, File, FileText, FileTextIcon, Film, Image, Trash } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { modelList } from "@/lib/available-models";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger , DropdownMenuItem } from "./ui/dropdown-menu";
 import { memo } from "react";
+import { Attachment } from "@/lib/getResponse";
+import { useSession } from "next-auth/react";
+import axios from "axios";
 
 
 type UsageDropdownProps = {
@@ -24,6 +27,29 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
     const [responseCopied , setResponseCopied] = useState<boolean>(false);
     const divRef = useRef<HTMLDivElement | null>(null);
     const currentModel = modelList.find((item) => item.modelId === message?.modelName);
+    const [files , setFiles] = useState<{ attachment : Attachment, readURL : string }[]>([]);
+    const session = useSession();
+
+    const getReadURL = async (file : Attachment) => {
+      if(!file || file === null || !session.data) return;
+
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/file/`;
+      const headers = { Authorization : `Bearer ${session.data?.user.token}` };
+
+      try{
+
+        const response = await axios.get(url , { 
+          headers ,
+          params : { fileKey : file.fileKey }
+        });
+        if(response.status === 200 && response.data) return response.data.readURL;
+        else return null;
+
+      }catch(err){
+        console.log("Failed to fetch read url : " , err);
+        return null;
+      }
+    }
 
     const handleCopyButtonClicked = async () => {
         if(message.response) {
@@ -31,6 +57,27 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
             await navigator.clipboard.writeText(message.response);
         }
     }
+
+    useEffect(() => {
+      const fetchURLs = async () => {
+        if(message.attachments && message.attachments.length > 0){
+          const results = await Promise.all(
+            message.attachments.map(async (file) => {
+              const url = await getReadURL(file);
+              return url !== null ? { attachment: file, readURL: url } : null;
+            })
+          );
+          const updatedList = results.filter(
+            (item): item is { attachment: Attachment, readURL: string } => item !== null
+          );
+          setFiles(updatedList);
+
+          console.log('updated list : ' , updatedList);
+        }
+      };
+      fetchURLs();
+    } , [message.attachments]);
+
 
     useEffect(() => {
         const handleClickOutside = (event : any) => {
@@ -46,10 +93,21 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
 
     return (
         <div ref={divRef} className="w-full flex flex-col justify-start group">
-            <div className="w-full flex items-center justify-end">
-                <div className="max-w-[70%] rounded-2xl bg-accent h-fit p-4 text-accent-foreground">
-                    {message.prompt}
-                </div>
+            <div className="w-full flex flex-col gap-2 items-end justify-start">
+              <div className="w-full max-w-[70%] flex flex-wrap items-center justify-end gap-2">
+                {
+                  (files && files.length > 0) && (
+                    files.map((file) => (
+                      file.attachment.fileType.startsWith('image/') ? 
+                      <ImagePreviewer key={file.attachment.fileKey} file={file}/> : 
+                      <FilePreviewer key={file.attachment.fileKey} file={file}/>
+                    ))
+                  )
+                }
+              </div>
+              <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 h-fit p-4 text-accent-foreground">
+                  {message.prompt}
+              </div>
             </div>
 
             {
@@ -154,6 +212,60 @@ const UsageDropdown: React.FC<UsageDropdownProps> = React.memo(({ message }) => 
   );
 });
 
+const ImagePreviewer = ({ file } : { file : { attachment : Attachment , readURL : string } }) => {
+  return (
+    <div className="h-24 w-24 rounded-md bg-secondary-foreground">
+        <img 
+          className="w-full h-full rounded-md object-cover"
+          src={file.readURL}
+          loading="lazy"
+        />
+    </div>
+  );
+}
+
+const downloadFile = async (file : { attachment: Attachment; readURL: string  }) => {
+  try{
+    // Fetch the file as a blob
+    const response = await fetch(file.readURL);
+    if (!response.ok) throw new Error("Network response was not ok");
+    const blob = await response.blob();
+    // Create a temporary URL for the blob
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.style.display = "none";
+    link.href = url;
+    link.download = file.attachment.fileName || "download";
+    document.body.appendChild(link);
+    link.click();
+    // Clean up
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+  }
+}
+
+const FilePreviewer = ({ file }: { file: { attachment: Attachment; readURL: string } }) => {
+  return (
+    <button onClick={() => downloadFile(file)} className="w-fit h-14 flex items-center cursor-pointer rounded-xl gap-2 px-2 py-1 border border-sidebar-border">
+      <div className="w-10 h-10 rounded-lg bg-yellow-400 flex items-center justify-center">
+        {getFileIcon(file.attachment.fileType , 'h-5 w-5')}
+      </div>
+      <div className="w-fit text-sm h-full mr-10 flex items-center justify-start text-foreground">
+        {file.attachment.fileName}
+      </div>
+    </button>
+  );
+};
+
+
+const getFileIcon = (fileType: string , className='') => {
+  if(fileType.startsWith("image/")) return <Image className={`h-4 w-4 text-white ${className}`}/>
+  else if(fileType.startsWith("video/")) return <Film className={`h-4 w-4 text-white ${className}`}/>
+  else if(fileType.startsWith("text")) return <FileTextIcon className={`w-4 h-4 text-white ${className}`}/>
+  else return <File className={`w-4 h-4 text-white ${className}`}/>
+}
 
 export default memo(ChatMessage, (prevProps, nextProps) => {
   // Only re-render if these props change

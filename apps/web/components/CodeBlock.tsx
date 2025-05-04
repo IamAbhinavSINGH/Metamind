@@ -29,7 +29,6 @@ export const CodeBlock = ({
   const preRef = useRef<HTMLPreElement>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
-  // Capture initial dimensions
   useEffect(() => {
     if (preRef.current) {
       const rect = preRef.current.getBoundingClientRect()
@@ -38,7 +37,7 @@ export const CodeBlock = ({
         height: rect.height
       })
     }
-  }, [])
+  }, []);
 
 
   useEffect(() => {

@@ -106,7 +106,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
               <CodeBlock
                 code={String(children).replace(/\n$/, "")}
                 language={match[1]}
-                theme={theme === "dark" ? "dark-plus" : "light-plus"}
+                theme={(theme === "dark" || theme === 'system') ? "dark-plus" : "light-plus"}
                 className="my-4"
                 showLineNumbers={true}
               />

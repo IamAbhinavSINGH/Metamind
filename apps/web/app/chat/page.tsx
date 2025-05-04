@@ -1,7 +1,7 @@
 "use client"
 
 import ChatInitialization from "@/pages/ChatInitalization";
-import { ModelType } from "@repo/types/src/types/chat";
+import { ModelType } from "@repo/types";
 import { useSession } from "next-auth/react";
 import { useSearchParams , useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -31,7 +31,7 @@ export default function Chat() {
     }
 
     return (
-        <div className="max-h-screen min-h-screen flex flex-col bg-sidebar">
+        <div className="max-h-screen min-h-screen flex flex-col bg-sidebar-accent">
             <ChatInitialization 
                 initialModel={model || 'auto'}
                 onModelChange={(model : string) => handleModelChange(model)}
