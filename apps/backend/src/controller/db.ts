@@ -1,6 +1,6 @@
 import db from "@repo/db";
 import { ModelType } from "@repo/types";
-import { FileMetaData } from "./handleChat";
+import { FileMetaData } from "./getResponse";
 
 export interface User{
     userId : string,
@@ -16,6 +16,13 @@ export interface MessageType{
     attachments : FileMetaData[] | null,
 }
 
+export interface MessageSource{
+    sourceType : string,
+    id : string,
+    title? : string,
+    url : string,
+}
+
 export interface StoreMessageProps{
     messageId : string,
     content : string,
@@ -26,8 +33,24 @@ export interface StoreMessageProps{
     completionTokens : number,
     promptTokens : number,
     totalTokens : number,
-    responseTime : number
+    responseTime : number,
+    sources? : MessageSource[]
 }   
+
+interface InsertMessageProps{
+    prompt : string,
+    content : string,
+    modelName : ModelType,
+    chatId : string,
+    finishReason : string,
+    reasoning : string | null,
+    completionTokens : number,
+    promptTokens : number,
+    totalTokens : number,
+    responseTime : number,
+    sources? : MessageSource[],
+    attachments? : FileMetaData[]
+}
 
 export interface CreateChatProps {
     chatName : string,
@@ -78,6 +101,14 @@ export const storeMessageResponse = async (messageProps : StoreMessageProps) => 
                 totalTokens : messageProps.totalTokens,
                 responseTime : messageProps.responseTime || 0,
                 liked : false,
+                sources : (messageProps.sources && messageProps.sources.length > 0) ? {
+                    create : messageProps.sources.map((source) => ({
+                        sourceId : source.id,
+                        title : source.title,
+                        url : source.url,
+                        sourceType : source.sourceType
+                    }))
+                } : undefined
             }
         });
 
@@ -216,7 +247,8 @@ export const getMessagesByChatId = async (chatId : string , userId : string) => 
                 liked : true,
                 finishReason : true,
                 modelName : true,
-                attachments : true
+                attachments : true,
+                sources : true
             }
         });
 
@@ -344,5 +376,60 @@ export const deleteMessage = async (messageId : string , chatId : string , userI
     }catch(err){
         console.log("An error occured while deleting an message : " , err);
         return { success : false , error : "Internal server error!" }
+    }
+}
+
+export const insertFinalMessage = async ({
+    prompt,
+    content,
+    modelName,
+    chatId,
+    finishReason,
+    reasoning, 
+    completionTokens,
+    promptTokens,
+    totalTokens,
+    responseTime,
+    sources,
+    attachments
+} : InsertMessageProps) => {
+    try{
+        const message = await db.message.create({
+            data : {
+                chatId : chatId,
+                response : content,
+                prompt : prompt,
+                responseTime : responseTime || 0,
+                modelName : modelName,
+                finishReason : finishReason,
+                reasoning : reasoning,
+                completionTokens : completionTokens,
+                promptTokens : promptTokens,
+                totalTokens : totalTokens,
+                liked : false,
+                sources : (sources && sources.length > 0) ? {
+                    create : sources.map((source) => ({
+                        sourceId : source.id,
+                        title : source.title,
+                        url : source.url,
+                        sourceType : source.sourceType
+                    }))
+                } : undefined,
+                attachments : (attachments && attachments.length > 0) ? {
+                    create : attachments.map((file) => ({
+                        fileName : file.fileName,
+                        fileId : file.fileId,
+                        fileType : file.fileType,
+                        fileSize : file.fileSize,
+                        fileKey : file.fileKey
+                    }))
+                } : undefined
+            }  
+        });
+
+        return message;
+    }catch(err){
+        console.log("An error occured while storing message : ", err);
+        return null;
     }
 }

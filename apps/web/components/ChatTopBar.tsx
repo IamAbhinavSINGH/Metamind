@@ -5,10 +5,9 @@ import Link from "next/link";
 import { useSidebar } from "@/lib/providers/SidebarContext";
 import { ChevronRight, Sidebar } from "lucide-react";
 import { useParams } from "next/navigation";
-import axios from "axios";
-import { ChatHistory } from "./ChatSidebar";
 import { useTheme } from "@/lib/providers/ThemeProvider";
-import { Card } from "./ui/card";
+import { ChatHistory } from "@/types/next-auth-extensions";
+import { useChatHistory } from "@/lib/providers/ChatHistoryContext";
 
 
 export const ChatTopBar = () => {
@@ -17,35 +16,12 @@ export const ChatTopBar = () => {
     const params = useParams();
     const chatId = params?.chatId;
     const [currentChat , setCurrentChat] = useState<ChatHistory | null>(null);
+    const { chatHistory } = useChatHistory();
 
     useEffect(() => {
-        const fetchChats = async () => {
-            if(!session.data || Array.isArray(chatId)) return;
-
-            if(!chatId){
-                setCurrentChat(null);
-                return;
-            }
-
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chats`
-            try{
-                const response = await axios.get(url , {
-                    headers : { "Authorization" : `Bearer ${session.data.user.token}` }
-                });
-
-                if(response.status === 200 && response.data){
-                    const chats = response.data.chats;
-                    const currentChat = chats.find((item : any) => item.id === chatId);
-
-                    if(currentChat) setCurrentChat(currentChat);
-                }
-            }catch(err){
-                console.log("An error occured while fetching chats : " , err);
-            }
-        }
-
-        fetchChats();
-    }, [params , session]);
+        const currentChat = chatHistory.find((item : ChatHistory) => item.id === chatId);
+        if(currentChat) setCurrentChat(currentChat);
+    }, [chatId , session , chatHistory]);
 
     return (
         <div>
@@ -72,6 +48,7 @@ const UserProfileIcon = () => {
     const [isMenuOpen , setIsMenuOpen] = useState<boolean>(false);
     const divRef = useRef<HTMLDivElement | null>(null);
     const itemRef = useRef<HTMLDivElement | null>(null);
+    const userImage = session?.data?.user.image
 
     if(session.status === 'loading'){
         return null;
@@ -93,8 +70,17 @@ const UserProfileIcon = () => {
         <div className="w-fit flex items-center justify-end gap-2" ref={divRef}>
             <DropdownMenu open={isMenuOpen}>
                 <DropdownMenuTrigger asChild>
-                    <button className="cursor-pointer w-8 h-8 rounded-full" onClick={() => setIsMenuOpen(true)}>
-                        <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" />
+                    <button className="cursor-pointer w-8 h-8 overflow-hidden rounded-full" onClick={() => setIsMenuOpen(true)}>
+                        {
+                            (userImage && userImage !== null) ? 
+                            <img
+                                src={userImage}
+                                loading="lazy"
+                                className="w-full h-full object-cover rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" 
+                            />
+                             :
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" />
+                        }
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent ref={itemRef} align="end" className="border-border my-2 rounded-md max-w-md w-full p-2 overflow-visible">

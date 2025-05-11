@@ -1,27 +1,21 @@
 "use client"
 
 import React , { useState , useEffect } from "react";
-import { Button } from "./ui/button";
-import { Search, Sidebar, SquarePen, Trash, X } from "lucide-react";
+import { Search, Sidebar, SquarePen, X } from "lucide-react";
 import { useSidebar } from "@/lib/providers/SidebarContext";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { LoadingSpinner } from "./LoadingSpinner";
-
-export interface ChatHistory {
-    id : string,
-    name : string,
-    createdAt : Date
-    lastUsedAt : Date,
-    index : number
-}
+import { useChatHistory } from "@/lib/providers/ChatHistoryContext";
+import { ChatHistory } from "@/types/next-auth-extensions";
 
 const ChatSidebar = () => {
     const { isExpanded , toggleSidebar } = useSidebar();
     const router = useRouter();
     const session = useSession();
+    const userImage = session?.data?.user?.image;
 
     return (
         <div className={`max-w-[250px] h-full w-full flex flex-col items-start bg-sidebar transition-all duration-500 border-r border-border
@@ -60,7 +54,18 @@ const ChatSidebar = () => {
             <div className="px-2 w-full cursor-pointer">
             <div className="h-16 w-full mb-2 hover:bg-sidebar-border rounded-md">
                 <div className="w-full h-full px-3 py-2 flex items-center justify-start gap-3">
-                    <div className=" w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" ></div>
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
+                        {
+                            (userImage && userImage !== null) ? 
+                            <img
+                                src={userImage}
+                                loading="lazy"
+                                className="w-full h-full object-cover rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" 
+                            />
+                             :
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to bg-pink-700" />
+                        }
+                    </div>
                     <div className="w-fit h-fit">
                         <div className="text-sm text-foreground">
                             {session.data?.user.name}
@@ -77,35 +82,13 @@ const ChatSidebar = () => {
 };
 
 const ChatHistoryComponent = () => {
-    const [chatHistory , setChatHistory] = useState<ChatHistory[]>([]);
+    const { chatHistory , refreshHistory } = useChatHistory();
     const [currentChat , setCurrentChat] = useState<ChatHistory | null>(null);
     const [groupedChats, setGroupedChats] = useState<{ [key: string]: ChatHistory[] }>({});
     const [isLoading , setIsLoading] = useState<boolean>(false);
     const session = useSession();
     const pathName = usePathname();
     const router = useRouter();
-
-    const fetchHistory = async () => {
-        if(session.status === 'unauthenticated' || !session.data) return;
-
-        const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chats`
-        try{
-            const response = await axios.get(url , {
-                headers : { "Authorization" : `Bearer ${session.data.user.token}` }
-            });
-            if(response.status === 200 && response.data){
-                setChatHistory([...response.data.chats.map((item : any) => {
-                    return { 
-                        ...item ,
-                        createdAt: new Date(item.createdAt),
-                        lastUsedAt: new Date(item.lastUsedAt),
-                    };
-                })])
-            }
-        }catch(err){
-            console.log("An error occured while fetching chat history : " , err);
-        }
-    }
 
     useEffect(() => {
         if(!pathName || pathName === null) return;
@@ -126,7 +109,7 @@ const ChatHistoryComponent = () => {
     useEffect(() => { 
         const getInitialChats = async () => {
             setIsLoading(true);
-            await fetchHistory();
+            await refreshHistory();
             setIsLoading(false);
         }
         
@@ -154,7 +137,7 @@ const ChatHistoryComponent = () => {
                     router.push("/chat?model=auto");
                     setCurrentChat(null);
                 }
-                fetchHistory();
+                refreshHistory();
             }
 
         }catch(err){

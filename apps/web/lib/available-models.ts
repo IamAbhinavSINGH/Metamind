@@ -19,14 +19,14 @@ export const modelList: ModelSchema[] = [
       modelDescription: 'General purpose tasks'
     },
     {
-      modelName: 'Gemini 2.5 Pro',
-      modelId: 'gemini-2.0-pro-exp-02-05',
-      modelDescription: 'Day-to-day performance'
+      modelName: 'Gemini 2.5 Flash Preview',
+      modelId: 'gemini-2.5-flash-preview-04-17',
+      modelDescription: 'Enhanced reasoning'
     },
     {
-      modelName: 'Gemini 2.0 Flash Thinking',
-      modelId: 'gemini-2.0-flash-thinking-exp-01-21',
-      modelDescription: 'Enhanced reasoning'
+      modelName: 'Gemini 2.5 Pro',
+      modelId: 'gemini-2.5-pro-exp-03-25',
+      modelDescription: 'Day-to-day performance'
     },
     {
       modelName: 'Deepseek Reasoning',

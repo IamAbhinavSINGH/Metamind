@@ -1,10 +1,11 @@
 import { Router , Response } from "express";
-import { AI_MODELS, chatSchema, ModelSchema, attachmentModel  } from '@repo/types';
+import { AI_MODELS, chatSchema, attachmentModel  } from '@repo/types';
 import { AuthRequest } from "../middleware/authMiddleware";
 import { createNewChatWithoutName, deleteChat, deleteLastMessageFromChat, getChat, getMessagesByChatId, getUser, storeUserPrompt } from "../controller/db";
 import { bigintReplacer } from '../utils/util';
 import { z } from "zod";
-import { handleRequest } from "../controller/handleChat";
+import { handleRequest } from "../controller/getResponse";
+import { handleChatName } from "../controller/getResponse";
 
 export const chatRouter = Router();
 
@@ -18,27 +19,14 @@ const createChatScehma = z.object({
 chatRouter.post('' , async (req : AuthRequest , res : Response) => {
     try{
         var userId = req.userId as string;
-
-        const modelParsedSchema = ModelSchema.safeParse(req.query.model);
-        if(!modelParsedSchema.success){
-            res.status(401).json({ error : "Invalid model parameters!!" , validModels : AI_MODELS });
-            return;
-        }
-
-        const chatParsedSchema = chatSchema.safeParse(req.body);
-        if(!chatParsedSchema.success){
+        const reqSchema = chatSchema.safeParse(req.body);
+        if(!reqSchema.success){
             res.status(401).json({ error : "Invalid inputs!!" });
             return;
         }
-        const body = chatParsedSchema.data;
-
-        const user = await getUser(userId);
-        if(!user || user === null){
-            res.status(401).json({ error : "Unauthorized!!" });
-            return;
-        }
-
-        const chat = await getChat(chatParsedSchema.data.chatId);
+        const body = reqSchema.data;
+        
+        const chat = await getChat(body.chatId);
         if(!chat || chat == null){
             res.status(401).json({ error : "No chats exist with the given id!!" });
             return;
@@ -55,20 +43,23 @@ chatRouter.post('' , async (req : AuthRequest , res : Response) => {
             if(message !== null) isFirstRequestForThisChat = true;
         }
 
+        res.write(`data: ${JSON.stringify({ type: 'chat-metadata', content : { chatId : chat.id , chatName : chat.name } })}\n\n`);
+
         await handleRequest({
-            prompt : body.prompt,
-            chatId : chat.id,
-            userId : user.userId,
-            firstRequest : isFirstRequestForThisChat,
-            model : modelParsedSchema.data,
+            messages : body.messages,
+            includeReasoning : body.modelParams.includeReasoning,
+            includeSearch : body.modelParams.includeSearch,
             expressResponse : res,
-            attachments : body.attachments
+            model : body.model,
+            chatId : body.chatId,
+            redirected : body.redirected
         });
 
         res.end();
         return;
+
     }catch(err){
-        console.log("An error occured while generating response to the prompt : " , err);
+        console.log('An error occured while generating user response : ' , err);
         res.status(500).json({ error : "Internal server error!!" });
     }
 });
@@ -153,11 +144,12 @@ chatRouter.post('/create' , async (req : AuthRequest , res : Response) => {
             throw new Error("Transaction failed: Could not create chat");
         }
 
+        handleChatName({ chatId : chat.id , prompt : body.prompt });
+
         const message = await storeUserPrompt(chat.id, body.prompt , body.modelName , body.attachments);
         if(!message || message == null) throw new Error("Transaction failed: Could not create chat");
 
         res.json({ chatId: chat.id, chatName: chat.name });
-
     }catch(err){
         console.log("An error occured while creating chat : " , err);
         res.status(500).json({ message : "Internal server error!" });

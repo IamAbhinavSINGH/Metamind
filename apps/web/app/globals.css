@@ -130,6 +130,27 @@
   scrollbar-width: none;
 }
 
+.transparent-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.transparent-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* transparent track */
+}
+
+.transparent-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(254, 255, 255, 0.2); /* <-- blue thumb */
+  border-radius: 4px;
+}
+
+/* Firefox */
+.transparent-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(254, 255, 255, 0.2) transparent; /* thumb, track */
+}
+
+/* 
 .code-block-pre {
   position: relative;
   margin: 0;
@@ -140,4 +161,4 @@
   display: block;
   min-width: 100%;
   width: max-content;
-}
+} */

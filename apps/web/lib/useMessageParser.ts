@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
-import { MessageParser, MessageParserOptions, OnFinishCallbackProps, ParserCallbacks } from "./MessageParser";
-import { Message } from "@/types/next-auth-extensions";
+import { ChatMetadataCallbackProps, MessageParser, MessageParserOptions, OnFinishCallbackProps, ParserCallbacks } from "./MessageParser";
+import { Message, MessageSource } from "@/types/next-auth-extensions";
+import { useChatHistory } from "./providers/ChatHistoryContext";
 
 interface UseMessageParserProps{
     setIsLoading : (value : boolean) => void
@@ -12,6 +13,7 @@ export const useMessageParser = ({
     setMessages
 } : UseMessageParserProps ) => {
     const parserRef = useRef<MessageParser | null>(null);
+    const { setChatName } = useChatHistory();
 
     const callbacks : ParserCallbacks = {
 
@@ -39,6 +41,24 @@ export const useMessageParser = ({
                     ...prev.slice(0 , lastIndex),
                     ({ ...currentMessage , response : (currentMessage.response || '') + text }) as Message
                 ];
+            })
+        }, [setMessages]),
+
+        onSource : useCallback((source : MessageSource) => {
+            setMessages((prev : Message[]) => {
+                if(prev.length === 0) return prev;
+                const lastIndex = prev.length-1;
+                const currentMessage = { ...prev[lastIndex] };
+
+                return [
+                    ...prev.slice(0 , lastIndex),
+                    (
+                        {
+                            ...currentMessage,
+                            sources : [...currentMessage.sources ?? [] , source]
+                        }
+                    ) as Message
+                ]; 
             })
         }, [setMessages]),
 
@@ -80,7 +100,14 @@ export const useMessageParser = ({
             })
         }, [setMessages]),
 
+        onChatMetadata : useCallback((chatMetadata : ChatMetadataCallbackProps) => {
+            console.log("chatMetadata : " , chatMetadata);
+            setChatName(chatMetadata.chatId , chatMetadata.chatName);
+        } , [setMessages]),
+
         onError : useCallback((errorMessage : string) => {
+            console.log("An error occured in backend : " , errorMessage );
+
             setMessages((prev : Message[]) => {
                 if(prev.length === 0) return prev;
                 const lastIndex = prev.length - 1;

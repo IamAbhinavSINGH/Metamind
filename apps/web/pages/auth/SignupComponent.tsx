@@ -9,6 +9,7 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import GoogleLogo from "@/components/ui/GoogleLogo";
 
 interface SignupData {
     name : string,
@@ -80,6 +81,8 @@ const SignupComponent = () => {
 
         setIsLoading(false);
     }
+
+    const handleGoogleSignin = async () => signIn('google' , { callbackUrl : '/chat?model=auto' });
     
     return (
         <Card className="w-full max-w-lg h-full max-h-2xl">
@@ -88,7 +91,7 @@ const SignupComponent = () => {
                 <CardDescription>Enter your name email and password to signup as a user</CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4 mb-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
                         <div className="relative">
@@ -99,7 +102,10 @@ const SignupComponent = () => {
                                 placeholder="name" 
                                 className="pl-10"
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData , name : e.target.value })} 
+                                onChange={(e) => {
+                                    setErrors("");
+                                    setFormData({ ...formData , name : e.target.value })
+                                }} 
                                 required 
                             />
                         </div>
@@ -115,7 +121,10 @@ const SignupComponent = () => {
                                 placeholder="name@example.com" 
                                 className="pl-10"
                                 value={formData.email}
-                                onChange={(e) => setFormData({ ...formData , email : e.target.value })} 
+                                onChange={(e) => {
+                                    setErrors("");
+                                    setFormData({ ...formData , email : e.target.value })
+                                }} 
                                 required 
                             />
                         </div>
@@ -132,7 +141,10 @@ const SignupComponent = () => {
                                 required
                                 placeholder="password"
                                 value={formData.password}
-                                onChange={(e) => setFormData({ ...formData , password : e.target.value })} 
+                                onChange={(e) => {
+                                    setErrors("");
+                                    setFormData({ ...formData , password : e.target.value })
+                                }} 
                             />
                             <Button
                                 type="button"
@@ -158,7 +170,10 @@ const SignupComponent = () => {
                                 required
                                 placeholder="password"
                                 value={formData.confirmPassword}
-                                onChange={(e) => setFormData({ ...formData , confirmPassword : e.target.value })} 
+                                onChange={(e) => {
+                                    setErrors("");
+                                    setFormData({ ...formData , confirmPassword : e.target.value })
+                                }} 
                             />
                             <Button
                                 type="button"
@@ -173,19 +188,29 @@ const SignupComponent = () => {
                         </div>
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? "Signing in..." : "Sign up"}
+                    <Button type="submit" className="w-full text-base font-light text-background bg-foreground" disabled={isLoading}>
+                        {isLoading ? "Signing in..." : "Signin"}
                     </Button>
-                    <div className="text-red-500 text-center w-full">
-                        {(errors && errors.length > 0) && errors}
-                    </div>
+                    { (errors && errors.length > 0) &&  <div className="text-pink-700 text-center w-full"> {errors} </div> }
                 </form>
+
+                 <div className="space-y-6">
+                    <div className="text w-full text-center border-b border"></div>
+                   <button
+                        type="button" 
+                        onClick={handleGoogleSignin}
+                        className="w-full h-fit bg-foreground text-background cursor-pointer rounded-md border border-border flex items-center justify-center px-3 py-1 gap-2">
+                        <GoogleLogo className="h-8 w-8"/>
+                        Continue with Google
+                   </button>
+                </div>
+
             </CardContent>
 
             <CardFooter className="flex flex-col">
                 <div className="mt-2 text-center text-sm">
                     Already have an account?{" "}
-                    <Link href={'/auth/login'} className="p-0 h-auto">
+                    <Link href={'/auth/login'} className="p-0 h-auto underline underline-offset-2">
                         Log in
                     </Link>
                 </div>

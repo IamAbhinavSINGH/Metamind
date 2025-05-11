@@ -18,7 +18,7 @@ model User {
   id                String      @id     @default(uuid()) 
   name              String      
   email             String      @unique
-  password          String    
+  password          String?    
   phoneNumber       String?
   token             String?
   createdAt         DateTime     @default(now())
@@ -51,7 +51,8 @@ model Message {
   totalTokens       BigInt?
   responseTime      Int?
   liked             Boolean?
-  attachments        Attachment[]
+  attachments       Attachment[]
+  sources           MessageSource[]
 }
 
 model Attachment {
@@ -63,6 +64,16 @@ model Attachment {
   fileSize          String?
   fileKey           String
   fileId            String?
+}
+
+model MessageSource {
+  id                String     @id     @default(uuid())
+  messageId         String
+  message           Message    @relation(fields: [messageId] , references: [id] , onDelete: Cascade)
+  sourceType        String
+  sourceId          String
+  title             String?
+  url               String
 }
 
 enum Author {

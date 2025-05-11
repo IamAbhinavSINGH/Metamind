@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState , useRef } from "react"
 import { Check, Copy, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getHighlighter, disposeHighlighter } from "@/lib/shiki"
+import { getHighlighter } from "@/lib/shiki"
 
 
 interface CodeBlockProps {
@@ -24,24 +24,13 @@ export const CodeBlock = ({
   showLineNumbers = true,
   fileName,
 }: CodeBlockProps) => {
-  const [html, setHtml] = useState<string>("")
-  const [copied, setCopied] = useState(false)
-  const preRef = useRef<HTMLPreElement>(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-
-  useEffect(() => {
-    if (preRef.current) {
-      const rect = preRef.current.getBoundingClientRect()
-      setDimensions({
-        width: rect.width,
-        height: rect.height
-      })
-    }
-  }, []);
+  const [html, setHtml] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
 
   useEffect(() => {
     let isMounted = true
+
     const highlightCode = async () => {
       if (!isMounted) return
       try {
@@ -103,19 +92,12 @@ export const CodeBlock = ({
       }
     }
 
-    highlightCode()
+    highlightCode();
 
     return () => {
       isMounted = false
     }
   }, [code, language, theme])
-
-   // Dispose highlighter on unmount
-   useEffect(() => {
-      return () => {
-        disposeHighlighter()
-      }
-    }, [])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code)
@@ -147,7 +129,7 @@ export const CodeBlock = ({
       <div
         className={cn(
           "flex items-center justify-between px-4 py-2 text-sm border-b border-border",
-          theme === "dark-plus" ? "bg-[#252526] text-gray-300" : "bg-[#F3F3F3] text-gray-700",
+          theme === "dark-plus" ? "bg-sidebar-border/90 text-gray-100" : "bg-[#F3F3F3] text-gray-700",
         )}
       >
         <div className="flex items-center gap-2">
@@ -162,7 +144,7 @@ export const CodeBlock = ({
             onClick={copyToClipboard}
             className={cn(
               "p-1.5 rounded-md transition-colors",
-              theme === "dark-plus" ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-200 text-gray-700",
+              theme === "dark-plus" ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
             )}
             aria-label="Copy code"
             title="Copy code"
@@ -173,7 +155,7 @@ export const CodeBlock = ({
             onClick={downloadCode}
             className={cn(
               "p-1.5 rounded-md transition-colors",
-              theme === "dark-plus" ? "hover:bg-gray-700 text-gray-300" : "hover:bg-gray-200 text-gray-700",
+              theme === "dark-plus" ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
             )}
             aria-label="Download code"
             title="Download code"
@@ -183,32 +165,11 @@ export const CodeBlock = ({
         </div>
       </div>
 
-
-      <div className="relative px-6 py-4 overflow-auto scrollbar-thin">
-        {/* Render plain text first */}
-        {/* <pre 
-          ref={preRef}
-          className={cn(
-            "absolute text-xs font-mono opacity-0 pointer-events-none",
-            showLineNumbers && "line-numbers"
-          )}
-          style={{ 
-            width: dimensions.width || 'auto',
-            height: dimensions.height || 'auto'
-          }}
-        >
-          {code}
-        </pre> */}
-        
-        {/* Highlighted content */}
+      <div className="relative px-6 py-6 overflow-auto scrollbar-thin">
         {html && (
           <div
-            className={cn(" text-xs font-mono", showLineNumbers && "line-numbers")}
+            className={cn("text-xs font-mono", showLineNumbers && "line-numbers")}
             dangerouslySetInnerHTML={{ __html: html }}
-            style={{
-              minWidth: dimensions.width || 'auto',
-              minHeight: dimensions.height || 'auto'
-            }}
           />
         )}
       </div>

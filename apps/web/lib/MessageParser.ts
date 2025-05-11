@@ -1,3 +1,4 @@
+import { MessageSource } from "@/types/next-auth-extensions"
 
 export interface OnFinishCallbackProps{
     responseTime? : string
@@ -8,13 +9,19 @@ export interface OnFinishCallbackProps{
     promptTokens? : string
 }
 
+export interface ChatMetadataCallbackProps{
+    chatId : string,
+    chatName : string
+}
+
 export interface ParserCallbacks{
     onResponse? : (text : string) => void
     onReason? : (text : string) => void
     onStart? : (messageId : string) => void
     onError? : (error : string) => void
     onFinish? : (details : OnFinishCallbackProps) => void
-    onSource? : (sources : string[]) => void
+    onSource? : (sources : MessageSource) => void
+    onChatMetadata? : (chatMetadata : ChatMetadataCallbackProps) => void
 }
 
 export interface MessageParserOptions{
@@ -42,7 +49,7 @@ export class MessageParser {
                 try{    
                     const { type , content } = JSON.parse(match[1]);
 
-                    switch(type){
+                    switch(type.toString()){
                         case 'messageId' : {
                             this._options.callbacks?.onStart?.(content);
                             break;
@@ -65,6 +72,11 @@ export class MessageParser {
 
                         case 'details' : {
                             this._options.callbacks?.onFinish?.(content);
+                            break;
+                        }
+
+                        case 'chat-metadata' : {
+                            this._options.callbacks?.onChatMetadata?.(content);
                             break;
                         }
 

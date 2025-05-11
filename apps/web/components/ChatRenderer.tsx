@@ -1,13 +1,13 @@
 import React, { useEffect, useRef , useState } from "react";
 import ChatMessage from "./ChatMessage";
-import ChatInput, { FileMetaData } from "./ChatInput";
+import ChatInput, { PromptSubmitProps } from "./ChatInput";
 import { Message } from "@/types/next-auth-extensions";
 import { useSession } from "next-auth/react";
 import { LoadingIndicator } from "./LoadingSpinner";
-import { modelList, ModelSchema } from "@/lib/available-models";
+import { modelList } from "@/lib/available-models";
 import axios from "axios";
 import { ModelType } from "@repo/types";
-import { getResponse } from "@/lib/getResponse";
+import { submitPrompt } from "@/lib/getResponse";
 import { useMessageParser } from "@/lib/useMessageParser";
 
 
@@ -24,21 +24,25 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
   const session = useSession();
   const { parseStream } = useMessageParser({ setIsLoading , setMessages });
 
-  const handleChatInput = async (prompt : string , selectedModel : ModelSchema , attachments : FileMetaData[] | undefined) => {
+  const handleChatInput = async (props : PromptSubmitProps) => {
+    const { prompt  , selectedModel, files , isSearchEnabled  } = props;
+
     if(!prompt || prompt.length === 0 || !session.data) return;
     const model = selectedModel.modelId as ModelType;
 
-    await getResponse({
-      prompt : prompt,
+    await submitPrompt({
+      setMessages,
+      messages,
+      prompt,
       selectedModel : model,
-      setMessages : setMessages,
-      setIsLoading : setIsLoading,
+      setIsLoading,
       isRedirected : false,
-      session : session,
-      chatId : chatId,
+      session,
+      chatId,
       parseStream,
-      attachments : attachments
-    }); 
+      attachments : files,
+      isSearchEnabled
+    })
   };
 
   const handleMessageDelete = async (messageId : string) => {
@@ -69,21 +73,26 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
       const model = messages[0]?.modelName as ModelType || 'auto';
       if(!prompt || prompt.length === 0) return;
 
-      await getResponse({
-        prompt : prompt,
+      await submitPrompt({
+        setMessages,
+        messages,
         selectedModel : model,
-        setMessages : setMessages,
-        setIsLoading : setIsLoading,
+        setIsLoading,
+        prompt,
         isRedirected : true,
-        session : session, 
-        chatId : chatId,
-        parseStream : parseStream,
-        attachments : messages[0]?.attachments || []
-      });       
+        session,
+        chatId,
+        parseStream,
+        attachments : messages[0]?.attachments || [],
+        isSearchEnabled :false
+      })
     }
 
     getResponseforFirstMessage();
   } , [session.status]);
+
+   const handleModelChange = (model : string) => {
+    }
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -101,16 +110,12 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
   useEffect(() => {
     // mutation observer to detect changes in the chat container
     const observer = new MutationObserver(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-      }
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight 
     })
 
-    // Start observing the chat container for changes
     if (scrollRef.current) {
       observer.observe(scrollRef.current, {
         childList: true,
-        subtree: true,
         characterData: true,
       })
     }
@@ -120,11 +125,11 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
 
 
   return (
-    <div className="w-full max-w-3xl h-full flex flex-col mx-auto relative">
+    <div className="w-full h-full flex flex-col relative bg-accent">
       {/* Scrollable pastMessages container */}
       <div
-        ref={scrollRef}
-        className="flex-1 pb-32 pt-10 overflow-y-scroll no-scrollbar p-4 flex flex-col gap-4"
+        ref={scrollRef} 
+        className="flex-1 w-full pb-32 pt-10 transparent-scrollbar overflow-y-scroll flex flex-col"
       >
         {
           (messages && messages.length > 0) &&
@@ -139,19 +144,20 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
         }
         {
           isLoading && 
-          <div className="w-full flex items-center justify-start">
+          <div className="w-full max-w-3xl px-4 md:px-6 mx-auto flex items-center justify-start">
             <LoadingIndicator isLoading={isLoading} loadingText="Generating response" />
           </div>
         }
       </div>
-      <div className="absolute top-0 left-0 w-full h-10 pointer-events-none bg-gradient-to-b from-sidebar-accent to-transparent" />
+      <div className="absolute top-0 left-0 w-full h-10 pointer-events-none bg-gradient-to-b from-accent to-transparent" />
       
-      <div className="sticky bottom-0 bg-sidebar-accent">
+      <div className="w-full max-w-4xl mx-auto bg-accent sticky bottom-0">
         <ChatInput
           isLoading={isLoading}
           modelList={modelList}
           initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
           onPromptSubmit={handleChatInput}
+          onModelChange={handleModelChange}
         />
       </div>
     </div>

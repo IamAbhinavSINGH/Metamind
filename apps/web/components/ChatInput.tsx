@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Paperclip, X, FileText, Image, Film, File, SendIcon } from "lucide-react"
+import { Paperclip, X, FileText, Image, Film, File, SendIcon, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
@@ -13,10 +13,17 @@ import { LoadingSpinner } from "./LoadingSpinner"
 import axios from "axios"
 import { useSession } from "next-auth/react"
 
+export interface PromptSubmitProps {
+  prompt : string,
+  selectedModel : ModelSchema,
+  files? : FileMetaData[],
+  isSearchEnabled : boolean
+}
+
 interface ChatInputProps {
   modelList: ModelSchema[]
   initialModel : ModelSchema | null
-  onPromptSubmit: (prompt: string , selectedModel : ModelSchema , files?: FileMetaData[]) => void
+  onPromptSubmit: (props : PromptSubmitProps) => void
   maxLength?: number,
   isLoading?: boolean,
   onModelChange? : (model : string) => void
@@ -37,16 +44,17 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel , setSelectedModel] = useState<ModelSchema>(initialModel ? initialModel : modelList[0]!);
+  const [isSearchEnabled , setIsSearchEnabled] = useState<boolean>(false);
   const session = useSession();
 
   // Auto-resize the textarea as user types
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto"
-      const newHeight = Math.min(textareaRef.current.scrollHeight, 300)
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 250)
       textareaRef.current.style.height = `${newHeight}px`
     }
-  }, [prompt])
+  }, [prompt]);
 
   useEffect(() => {
     const pendingFiles = files.filter(item => item.isLoading);
@@ -82,7 +90,7 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (prompt.trim() === "" && files.length === 0) return
-    onPromptSubmit(prompt, selectedModel , files.length > 0 ? files : undefined);
+    onPromptSubmit({prompt, selectedModel , files , isSearchEnabled});
     setPrompt("")
     setFiles([]);
   }
@@ -113,35 +121,6 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
     fileInputRef.current?.click()
   }
 
-  const getFileIcon = (file: File) => {
-    const type = file.type.split("/")[0]
-    switch (type) {
-      case "image":
-        return <Image className="h-4 w-4" />
-      case "video":
-        return <Film className="h-4 w-4" />
-      case "text":
-        return <FileText className="h-4 w-4" />
-      default:
-        return <File className="h-4 w-4" />
-    }
-  }
-
-  const getFilePreview = (file: File) => {
-    if (file.type.startsWith("image/")) {
-      return (
-        <div className="relative h-16 w-16 rounded-md overflow-hidden">
-          <img
-            src={URL.createObjectURL(file) || "/placeholder.svg"}
-            alt={file.name}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )
-    }
-    return null
-  }
-
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -157,31 +136,28 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   }
 
   return (
-    <div className="w-full flex flex-col">
-      <div className="w-full max-w-3xl mx-auto bg-sidebar-border/90 border border-border rounded-3xl z-20 shadow">
-        <form onSubmit={handleSubmit} className="py-1 px-4">
+    <div className="w-full bg-transparent flex flex-col px-4 md:px-6 lg:px-8">
+      <div className="w-full max-w-3xl mx-auto bg-sidebar-border/80 border border-border rounded-3xl z-20 pt-1 px-4">
+        <form onSubmit={handleSubmit} className="rounded-3xl">
           {files.length > 0 && (
-              <div className="mb-3">
-                  <div className="text-sm text-muted-foreground mb-2">Attached files ({files.length})</div>
-                  <div className="flex flex-wrap gap-1">
+              <div className="mb-2">
+                  <div className="text-sm text-muted-foreground mt-1 pl-1 mb-2">Attached files ({files.length})</div>
+                  <div className="flex flex-wrap gap-2">
                   {files.map((file, index) => (
-                      <div key={index} className="group relative hover:bg-border flex items-center gap-1 bg-muted p-2 rounded-md text-sm">
+                      <div key={index} className="group relative hover:bg-accent flex items-center gap-2 bg-muted p-2 rounded-md text-sm">
                         {getFilePreview(file.file) || (
                             <div className="flex items-center gap-1.5">
                             {getFileIcon(file.file)}
                               <span className="max-w-[150px] truncate">{file.file.name}</span>
                             </div>
                         )}
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 rounded-full opacity-70 cursor-pointer hover:opacity-100 hover:bg-transparent"
+                        <button
+                            className="h-4 w-4 rounded-full flex items-center justify-center bg-accent-foreground cursor-pointer hover:bg-accent-foreground"
                             onClick={() => removeFile(index)}
                         >
-                            <X className="h-3 w-3" />
+                            <X className="h-3 w-3 text-black" />
                             <span className="sr-only">Remove file</span>
-                        </Button>
+                        </button>
                       </div>
                   ))}
                   </div>
@@ -191,14 +167,14 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
               <div>
                   <ScrollArea
                       className={cn(
-                      "w-full bg-transparent px-3 py-2 mt-2",
+                      "w-full bg-transparent pt-2",
                       "focus:outline-none"
                       )}
                   >
                       <textarea
                           ref={textareaRef}
-                          className="w-full resize-none bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-base min-h-[30px]"
-                          placeholder="Type your message..."
+                          className="w-full min-h-10 transparent-scrollbar resize-none text-accent-foreground placeholder:text-muted-foreground focus:outline-none text-base"
+                          placeholder="Ask anything"
                           value={prompt}
                           onKeyDown={handleTextareaKeyDown}
                           onChange={(e) => {
@@ -209,20 +185,18 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
                       />
                   </ScrollArea>
               </div>
-              {/* <div className="w-full flex justify-end items-center">
-                  <div className="text-xs text-muted-foreground mr-1">
-                    {prompt.length > 0 && maxLength && (
-                        <span> {prompt.length}/{maxLength} </span>
-                    )}
-                  </div>
-              </div> */}
               <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
-              <div className="w-full flex items-center justify-between gap-4 mt-2 mb-4">
+              <div className="w-full flex items-center justify-between gap-2 mb-2">
                   <SelectModel 
                       modelList={modelList}
                       selectedModel={selectedModel}
                       setSelectedModel={handleModelChange}
                   />
+
+                  <SearchButton isSearchEnabled={isSearchEnabled} toggleSearch={(e) =>{
+                    e.preventDefault();
+                    setIsSearchEnabled((prev) => !prev) 
+                  }}/>
 
                   <div className="w-full flex items-end justify-end gap-2">
                       <Button
@@ -266,6 +240,21 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   )
 }
 
+const SearchButton = ({ isSearchEnabled , toggleSearch } : { isSearchEnabled : boolean , toggleSearch : (e : any) => void }) => {
+
+  return (
+    <button 
+      type="button"
+      className={`w-fit h-fit cursor-pointer px-3 py-2 text-sm rounded-full border border-border flex items-center justify-center gap-2 ${isSearchEnabled && 'bg-sky-800 opacity-100 text-sky-200'}`}
+      onClick={toggleSearch}
+    >
+      <Globe className={`w-4 h-4 ${isSearchEnabled ? 'text-sky-200' : 'text-white'}`} />
+      Search
+    </button>
+  );
+
+}
+
 const SelectModel = ({ 
   modelList , 
   selectedModel , 
@@ -287,7 +276,7 @@ const SelectModel = ({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button className="border px-4 py-1 cursor-pointer">
+                <Button className="px-5 py-0.5 text-sm cursor-pointer">
                     {currentSelectedModel.modelName}
                 </Button>
             </DropdownMenuTrigger>
@@ -312,5 +301,34 @@ const SelectModel = ({
             </DropdownMenuContent>
         </DropdownMenu>
     );
+}
+
+const getFileIcon = (file: File) => {
+  const type = file.type.split("/")[0]
+  switch (type) {
+    case "image":
+      return <Image className="h-4 w-4" />
+    case "video":
+      return <Film className="h-4 w-4" />
+    case "text":
+      return <FileText className="h-4 w-4" />
+    default:
+      return <File className="h-4 w-4" />
+  }
+}
+
+const getFilePreview = (file: File) => {
+  if (file.type.startsWith("image/")) {
+    return (
+      <div className="relative h-16 w-16 rounded-md overflow-hidden">
+        <img
+          src={URL.createObjectURL(file) || "/placeholder.svg"}
+          alt={file.name}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    )
+  }
+  return null
 }
 

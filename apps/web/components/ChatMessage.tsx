@@ -1,15 +1,16 @@
-import { Message } from "@/types/next-auth-extensions";
+import { Message, MessageSource } from "@/types/next-auth-extensions";
 import React from "react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { Button } from "./ui/button";
-import { BadgeInfo, CheckCheck, Copy, File, FileText, FileTextIcon, Film, Image, Trash } from "lucide-react";
+import { BadgeInfo, CheckCheck, Copy, ExternalLink, File, FileText, FileTextIcon, Film, Image, Trash } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { modelList } from "@/lib/available-models";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger , DropdownMenuItem } from "./ui/dropdown-menu";
 import { memo } from "react";
 import { Attachment } from "@/lib/getResponse";
-import { useSession } from "next-auth/react";
+import { SessionContextValue, useSession } from "next-auth/react";
 import axios from "axios";
+import MessageSources from "./MessageSource";
 
 
 type UsageDropdownProps = {
@@ -23,47 +24,17 @@ type ChatMessageProps = {
 };
 
 const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps ) => {
-
-    const [responseCopied , setResponseCopied] = useState<boolean>(false);
     const divRef = useRef<HTMLDivElement | null>(null);
     const currentModel = modelList.find((item) => item.modelId === message?.modelName);
     const [files , setFiles] = useState<{ attachment : Attachment, readURL : string }[]>([]);
     const session = useSession();
-
-    const getReadURL = async (file : Attachment) => {
-      if(!file || file === null || !session.data) return;
-
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/file/`;
-      const headers = { Authorization : `Bearer ${session.data?.user.token}` };
-
-      try{
-
-        const response = await axios.get(url , { 
-          headers ,
-          params : { fileKey : file.fileKey }
-        });
-        if(response.status === 200 && response.data) return response.data.readURL;
-        else return null;
-
-      }catch(err){
-        console.log("Failed to fetch read url : " , err);
-        return null;
-      }
-    }
-
-    const handleCopyButtonClicked = async () => {
-        if(message.response) {
-            setResponseCopied(true);
-            await navigator.clipboard.writeText(message.response);
-        }
-    }
 
     useEffect(() => {
       const fetchURLs = async () => {
         if(message.attachments && message.attachments.length > 0){
           const results = await Promise.all(
             message.attachments.map(async (file) => {
-              const url = await getReadURL(file);
+              const url = await getReadURL(file , session);
               return url !== null ? { attachment: file, readURL: url } : null;
             })
           );
@@ -71,29 +42,14 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
             (item): item is { attachment: Attachment, readURL: string } => item !== null
           );
           setFiles(updatedList);
-
-          console.log('updated list : ' , updatedList);
         }
       };
       fetchURLs();
     } , [message.attachments]);
 
-
-    useEffect(() => {
-        const handleClickOutside = (event : any) => {
-            if(divRef.current && !divRef.current.contains(event.target)){
-                setResponseCopied(false);
-            }
-        }
-
-        window.addEventListener('click' , handleClickOutside);
-
-        () => window.addEventListener('click' , handleClickOutside);
-    }, []);
-
     return (
-        <div ref={divRef} className="w-full flex flex-col justify-start group">
-            <div className="w-full flex flex-col gap-2 items-end justify-start">
+        <div ref={divRef} className="w-full px-4 md:px-6  max-w-3xl mx-auto flex flex-col justify-start group">
+            <div className="w-full flex flex-col gap-1 items-end justify-start">
               <div className="w-full max-w-[70%] flex flex-wrap items-center justify-end gap-2">
                 {
                   (files && files.length > 0) && (
@@ -106,13 +62,13 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                 }
               </div>
               <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 h-fit p-4 text-accent-foreground">
-                  {message.prompt}
+                  <MarkdownRenderer content={message.prompt} className="text-foreground overflow-auto"/>
               </div>
             </div>
 
             {
               (message.error && (!message.response || message.response.length === 0)) && 
-                <div className="w-fit px-4 pt-2 mt-4 rounded-lg border bg-red-950">
+                <div className="w-fit px-4 mt-4 rounded-lg border bg-red-950">
                     <MarkdownRenderer 
                       key={`error-${message.id}`}
                       content={message.error || ''} 
@@ -130,44 +86,23 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                     />
                 </div>
             }
+
+            {(message.sources && message.sources.length > 0) && <MessageSources sources={message.sources} />}
+
             {  
-                <div 
-                    className={`
-                        ${(isLast && message.totalTokens) ? 'visible' : 'invisible'} transition-all duration-400 ease-in-out w-full 
-                        flex items-center justify-between ${message.totalTokens && 'group-hover:visible'}
-                    `}>
-                    <div className="w-fit flex items-center justify-start gap-1">
-                        <Button
-                            onClick={handleCopyButtonClicked}
-                            size={'icon'} 
-                            className="w-8 h-8 rounded-full bg-transparent shadow-transparent hover:bg-sidebar-border cursor-pointer"
-                        >
-                            { responseCopied ? <CheckCheck className="w-6 h-6 text-muted-foreground" /> : <Copy className='w-6 h-6 text-muted-foreground'/> }
-                        </Button>
- 
-                        <Button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onDeleteClicked(message?.id || "")
-                            }}
-                            className="w-8 h-8 rounded-full bg-transparent shadow-transparent hover:bg-sidebar-border cursor-pointer"
-                        >
-                            <Trash className="w-10 h-10 text-muted-foreground "/>
-                        </Button>
-
-                        
-                        <UsageDropdown message={message} />
-                    </div>
-
-                    <div className="text-sm text-muted-foreground">
-                        generated with {currentModel ? currentModel.modelName : message.modelName}
-                    </div>
-                </div>
+              <div className={` ${(isLast && message.response) ? 'visible' : 'invisible'} transition-all duration-400 ease-in-out w-full 
+                      flex items-center justify-between ${message.response && 'group-hover:visible'} `}>
+                  
+                  <MessageInfoComponent message={message} onDeleteClicked={onDeleteClicked} />
+                  <div className="text-sm text-muted-foreground">
+                      generated with {currentModel ? currentModel.modelName : message.modelName}
+                  </div>
+              </div>
             }
         </div>
     );
 }  
-
+ 
 const UsageDropdown: React.FC<UsageDropdownProps> = React.memo(({ message }) => {
   const [isUsageModalOpen, setIsUsageModalOpen] = useState(false);
 
@@ -187,7 +122,7 @@ const UsageDropdown: React.FC<UsageDropdownProps> = React.memo(({ message }) => 
           <div className="w-fit flex flex-col items-start">
             <div className="flex text-sm text-muted-foreground justify-center items-center gap-1">
               <span>Finish reason: </span>
-              <span>{message.finishReason}</span>
+              <span>{message.finishReason || '--'}</span>
             </div>
             <div className="flex text-sm text-muted-foreground justify-start items-center gap-2">
               <span>Response time: </span>
@@ -195,20 +130,67 @@ const UsageDropdown: React.FC<UsageDropdownProps> = React.memo(({ message }) => 
             </div>
             <div className="flex text-sm text-muted-foreground justify-start items-center gap-2">
               <span>Total tokens: </span>
-              <span>{message.totalTokens}</span>
+              <span>{message.totalTokens || '--'}</span>
             </div>
             <div className="flex text-sm text-muted-foreground justify-start items-center gap-2">
               <span>Prompt tokens: </span>
-              <span>{message.promptTokens}</span>
+              <span>{message.promptTokens || '--'}</span>
             </div>
             <div className="flex text-sm text-muted-foreground justify-start items-center gap-2">
               <span>Completion tokens: </span>
-              <span>{message.completionTokens}</span>
+              <span>{message.completionTokens || '--'}</span>
             </div>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+});
+
+const MessageInfoComponent = React.memo(({ message , onDeleteClicked } : { message : Message , onDeleteClicked: (id: string) => void }) => {
+  const [responseCopied , setResponseCopied] = useState<boolean>(false);
+  const divRef = useRef<HTMLDivElement | null>(null);
+  const handleCopyButtonClicked = async () => {
+      if(message.response) {
+        setResponseCopied(true);
+        await navigator.clipboard.writeText(message.response);
+        setTimeout(() => setResponseCopied(false) , 1500);
+      }
+  }
+
+  useEffect(() => {
+      const handleClickOutside = (event : any) => {
+          if(divRef.current && !divRef.current.contains(event.target)){
+              setResponseCopied(false);
+          }
+      }
+      window.addEventListener('click' , handleClickOutside);
+      () => window.addEventListener('click' , handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={divRef} className="w-fit flex items-center justify-start gap-1">
+      <Button
+          onClick={handleCopyButtonClicked}
+          size={'icon'} 
+          className="w-8 h-8 rounded-full bg-transparent shadow-transparent hover:bg-sidebar-border cursor-pointer"
+      >
+          { responseCopied ? <CheckCheck className="w-6 h-6 text-muted-foreground" /> : <Copy className='w-6 h-6 text-muted-foreground'/> }
+      </Button>
+
+      <Button
+          onClick={(e) => {
+            e.preventDefault();
+            onDeleteClicked(message?.id || "")
+          }}
+          className="w-8 h-8 rounded-full bg-transparent shadow-transparent hover:bg-sidebar-border cursor-pointer"
+      >
+          <Trash className="w-10 h-10 text-muted-foreground "/>
+      </Button>
+
+      
+      <UsageDropdown message={message} />
+    </div>
   );
 });
 
@@ -259,7 +241,6 @@ const FilePreviewer = ({ file }: { file: { attachment: Attachment; readURL: stri
   );
 };
 
-
 const getFileIcon = (fileType: string , className='') => {
   if(fileType.startsWith("image/")) return <Image className={`h-4 w-4 text-white ${className}`}/>
   else if(fileType.startsWith("video/")) return <Film className={`h-4 w-4 text-white ${className}`}/>
@@ -277,3 +258,23 @@ export default memo(ChatMessage, (prevProps, nextProps) => {
   )
 })
 
+ const getReadURL = async (file : Attachment , session : SessionContextValue) => {
+  if(!file || file === null || !session.data) return;
+
+  const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/file/`;
+  const headers = { Authorization : `Bearer ${session.data?.user.token}` };
+
+  try{
+
+    const response = await axios.get(url , { 
+      headers ,
+      params : { fileKey : file.fileKey }
+    });
+    if(response.status === 200 && response.data) return response.data.readURL;
+    else return null;
+
+  }catch(err){
+    console.log("Failed to fetch read url : " , err);
+    return null;
+  }
+}

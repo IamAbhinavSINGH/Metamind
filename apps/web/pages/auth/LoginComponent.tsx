@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import GoogleLogo from "@/components/ui/GoogleLogo";
+
 
 interface LoginData {
     email : string,
@@ -62,17 +64,19 @@ const LoginComponent = () => {
         setIsLoading(false);
     };
 
+    const handleGoogleSignin = async () => signIn('google' , { callbackUrl : '/chat?model=auto' });
+
     return (
-        <Card className="w-full max-w-lg">
+        <Card className="w-full max-w-lg bg-accent">
             <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl font-semibold">Login</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-3xl font-semibold text-center">Login</CardTitle>
+                <CardDescription className="text-center">
                     Enter your email and password to access your account
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
+            <CardContent className="mt-4">
+                <form onSubmit={handleSubmit} className="mb-4">
+                    <div className="space-y-2 mb-4">
                         <Label htmlFor="email">Email</Label>
                         <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -82,15 +86,18 @@ const LoginComponent = () => {
                             placeholder="name@example.com" 
                             className="pl-10"
                             value={formData.email}
-                            onChange={(e) => setFormData({ ...formData , email : e.target.value })} 
+                            onChange={(e) =>{
+                                setError("");
+                                setFormData({ ...formData , email : e.target.value })
+                            }} 
                             required 
                         />
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                         <div className="flex items-center justify-between">
                         <Label htmlFor="password">Password</Label>
-                        <Button variant="link" className="p-0 h-auto text-xs">
+                        <Button type="button" variant="link" className="p-0 h-auto text-xs cursor-pointer">
                             Forgot password?
                         </Button>
                         </div>
@@ -102,7 +109,10 @@ const LoginComponent = () => {
                             className="pl-10 pr-10" 
                             required
                             value={formData.password}
-                            onChange={(e) => setFormData({ ...formData , password : e.target.value })} 
+                            onChange={(e) => {
+                                setError("");
+                                setFormData({ ...formData , password : e.target.value })
+                            }} 
                         />
                         <Button
                             type="button"
@@ -116,18 +126,28 @@ const LoginComponent = () => {
                         </Button>
                         </div>
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button type="submit" className="w-full mb-2 text-base bg-foreground text-background cursor-pointer" disabled={isLoading}>
                         {isLoading ? "Logging in..." : "Login"}
                     </Button>
-                    <div className="text-red-500 text-center w-full">
-                        {(error && error.length > 0) && error}
-                    </div>
+                    {
+                        (error && error.length > 0) &&  <div className="text-pink-700 text-center w-full"> {error}</div>
+                    }
                 </form>
+                <div className="space-y-4">
+                    <div className="w-full text-center border-b border"></div>
+                   <button
+                        type="button" 
+                        onClick={handleGoogleSignin}
+                        className="w-full h-fit bg-foreground text-background cursor-pointer rounded-md border border-border flex items-center justify-center px-3 py-1 gap-2">
+                        <GoogleLogo className="h-8 w-8"/>
+                        Continue with Google
+                   </button>
+                </div>
             </CardContent>
             <CardFooter className="flex flex-col">
                 <div className="mt-2 text-center text-sm">
                     Don't have an account?{" "}
-                    <Link href={'/auth/signup'} className="p-0 h-auto">
+                    <Link href={'/auth/signup'} className="p-0 h-auto underline underline-offset-2">
                         Sign up
                     </Link>
                 </div>

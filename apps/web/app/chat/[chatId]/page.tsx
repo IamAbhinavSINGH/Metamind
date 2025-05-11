@@ -5,7 +5,7 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useParams , useRouter, useSearchParams } from "next/navigation";
 import { useEffect , useState } from "react";
-import { Message } from "@/types/next-auth-extensions";
+import { Message, MessageSource } from "@/types/next-auth-extensions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import ChatInput from "@/components/ChatInput";
 import { modelList } from "@/lib/available-models";
@@ -29,8 +29,7 @@ export default function (){
         if(session.status !== 'authenticated' || !chatId) return;
 
         setIsFalseChat(false);
-        if (messages.length === 0) setIsLoading(true)
-        else return;
+        if (messages.length === 0) setIsLoading(true);
 
         const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/${chatId}`
 
@@ -43,7 +42,19 @@ export default function (){
                 const newMessages = response.data.messages;
                 // Only update if messages have changed
                 if (JSON.stringify(newMessages) !== JSON.stringify(messages)) {
-                    setMessages([...newMessages])
+                    setMessages([...newMessages.map((_message : any) => {
+                        return {
+                            ..._message,
+                            sources : _message?.sources.map((_source : any) => {
+                                return {
+                                    sourceType : _source.sourceType || '',
+                                    id : _source.sourceId || '',
+                                    title : _source.title || '',
+                                    url : _source.url || ''
+                                } as MessageSource
+                            })
+                        }
+                    })])
                 }
             }
 
@@ -81,7 +92,7 @@ export default function (){
 
     if(isLoading && (redirected && redirected === "true")){
         return (
-            <div className='w-full h-full flex flex-col pb-10 bg-sidebar'>
+            <div className='w-full h-full flex flex-col pb-10 bg-accent'>
                 <div className='flex-1 w-full h-full flex items-center justify-center'>
                     <ChatInput 
                         modelList={modelList}
@@ -94,11 +105,11 @@ export default function (){
     }
     else if(isLoading){
         return (
-            <div className='w-full h-full flex flex-col pb-10 bg-sidebar relative'>
+            <div className='w-full h-full flex flex-col pb-10 bg-accent relative'>
                 <div className='flex-1 w-full h-full flex items-center justify-center'>
                     <LoadingSpinner size="md"/>
                 </div>
-                <div className="sticky bottom-0 bg-sidebar">
+                <div className="sticky bottom-0 bg-accent">
                     <ChatInput
                         initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                         modelList={modelList}
@@ -111,7 +122,7 @@ export default function (){
     }
 
     return (
-        <div className="w-full px-4 md:px-8 lg:px-12 h-screen bg-sidebar-accent">
+        <div className="w-full h-screen bg-accent">
             <ChatRenderer 
                 refresh={fetchChats}
                 messages={messages} 

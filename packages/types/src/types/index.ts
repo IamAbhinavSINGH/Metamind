@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const AI_MODELS = [
     "auto",
     'gemini-2.0-flash-001',
-    'gemini-2.0-pro-exp-02-05',
-    "gemini-2.0-flash-thinking-exp-01-21",
+    "gemini-2.5-flash-preview-04-17",
+    "gemini-2.5-pro-exp-03-25",
     "deepseek-chat",
     "deepseek-reasoner",
     "gpt-4.0",
@@ -23,9 +23,22 @@ export const attachmentModel = z.object({
   fileKey : z.string()
 })
 
+export const messageSchema = z.object({
+  role : z.enum(['user' , 'assistant']),
+  content : z.string(),
+  attachments : z.array(attachmentModel).optional(),
+  id : z.string().optional()
+});
+
+export const modelParamsSchema = z.object({
+  includeSearch : z.boolean(),
+  includeReasoning : z.boolean(),
+})
+
 export const chatSchema = z.object({
+  messages : z.array(messageSchema),
+  model : ModelSchema,
   chatId : z.string(),
-  prompt : z.string(),
-  redirected : z.boolean().optional(),
-  attachments : z.array(attachmentModel).optional()
+  modelParams : modelParamsSchema,
+  redirected : z.boolean()
 });

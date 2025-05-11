@@ -24,7 +24,6 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
   // Add this useEffect to handle content loading
   useEffect(() => {
     setContentLoaded(false)
-    // Small delay to ensure state updates properly
     const timer = setTimeout(() => setContentLoaded(true), 100)
     return () => clearTimeout(timer)
   }, [content])
@@ -56,7 +55,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
           h6: ({ node, ...props }) => (
             <h6 className="scroll-m-20 text-base font-semibold tracking-tight mb-4 mt-6" {...props} />
           ),
-          p: ({ node, ...props }) => <p className="leading-7 mb-2 font-light" {...props} />,
+          p: ({ node, ...props }) => <p className="leading-7 font-light" {...props} />,
           a: ({ node, ...props }) => (
             <a
               className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
@@ -78,7 +77,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             />
           ),
           table: ({ node, ...props }) => (
-            <div className="my-6 w-full overflow-y-auto">
+            <div className="my-2 w-full overflow-y-auto">
               <table className="w-full border-collapse border border-border font-light" {...props} />
             </div>
           ),
@@ -103,13 +102,15 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             const match = /language-(\w+)/.exec(className || "")
 
             return match ? (
-              <CodeBlock
-                code={String(children).replace(/\n$/, "")}
-                language={match[1]}
-                theme={(theme === "dark" || theme === 'system') ? "dark-plus" : "light-plus"}
-                className="my-4"
-                showLineNumbers={true}
-              />
+              contentLoaded && (
+                <CodeBlock
+                  code={String(children).replace(/\n$/, "")}
+                  language={match[1]}
+                  theme={(theme === "dark" || theme === 'system') ? "dark-plus" : "light-plus"}
+                  className="my-4"
+                  showLineNumbers={true}
+                />
+              )
             ) : (
               <code className="bg-muted rounded-sm px-1.5 py-0.5 text-sm font-mono" {...props}>
                 {children}

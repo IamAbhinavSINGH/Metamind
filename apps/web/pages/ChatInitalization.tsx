@@ -1,4 +1,4 @@
-import ChatInput, { FileMetaData } from '@/components/ChatInput';
+import ChatInput, { FileMetaData, PromptSubmitProps } from '@/components/ChatInput';
 import React , { useState } from 'react';
 import { ModelType } from '@repo/types'
 import axios from 'axios';
@@ -23,7 +23,8 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
     const router = useRouter();
     const [isLoading , setIsLoading] = useState<boolean>(false);
 
-    const handleSubmit = async(prompt : string , selectedModel : ModelSchema , attachments : FileMetaData[] | undefined) => {
+    const handleSubmit = async(props : PromptSubmitProps) => {
+        const { prompt , selectedModel , files } = props;
         try{
             setIsLoading(true);
             const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/create`;
@@ -32,8 +33,8 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
                 modelName : selectedModel.modelId,
             }
 
-            if(attachments && attachments.length > 0){
-                dataToSend.attachments = attachments.map((file) =>  {
+            if(files && files.length > 0){
+                dataToSend.attachments = files.map((file) =>  {
                     return {
                         fileName : file.file.name,
                         fileType : file.file.type,

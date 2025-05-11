@@ -8,9 +8,17 @@ declare module "next-auth" {
             userId : string,
             name : string,
             token : string,
-            email : string
+            email : string,
+            image : string | null
         }
     }
+}
+
+export interface ChatHistory{
+    id : string,
+    name : string,
+    createdAt : Date,
+    lastUsedAt : Date,
 }
 
 
@@ -21,13 +29,21 @@ export interface Message {
     reasoning? : string | null,
     response? : string | null,
     responseTime? : number | null,
-    totalTokens?: number | null;  // Changed from string to number
+    totalTokens?: number | null;  
     completionTokens? : number | null,
     promptTokens? : number | null,
     liked? : boolean | null,
     finishReason? : string | null,
     modelName? : string | null,
     attachments? : Attachment[] | null
-    sources?: string[]; // New field for sources
+    sources?: MessageSource[];
     error?: string; // New field for error messages
+}
+
+export interface MessageSource{
+    sourceType : string,
+    id : string,
+    title : string,
+    url : string
+    providerMetadata? : any
 }
