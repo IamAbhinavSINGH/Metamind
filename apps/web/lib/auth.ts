@@ -102,7 +102,7 @@ const signInOAuthUser = async ({
     provider
 } : SigninOAuthUserProps) => {
     try{
-        const url = `${process.env.NEXTAUTH_BACKEND_URL}/api/v1/auth/oauth`;
+        const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/auth/oauth`;
         const response = await axios.post(url , {
             oAuthToken : oAuthToken,
             provider : provider
@@ -225,7 +225,7 @@ export const authOptions : NextAuthOptions = {
                 }
             } else {
                 try {
-                    const url = `${process.env.NEXTAUTH_BACKEND_URL}/api/v1/auth/verify`;
+                    const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/auth/verify`;
                     const response = await axios.get(url , { headers: { Authorization: `Bearer ${customToken.token}` } });
                     
                     if (response.status === 200 && response.data.user) {
