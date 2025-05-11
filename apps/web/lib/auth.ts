@@ -207,9 +207,9 @@ export const authOptions : NextAuthOptions = {
             const customToken : CustomToken = token;
 
             if(user){
-                const oauth = (profile as any).oauthUser;
+                const oauth = (profile as any)?.oauthUser;
                 
-                if(oauth){
+                if(oauth && oauth != null){
                     customToken.userId = oauth.id;
                     customToken.email = oauth.email;
                     customToken.name = oauth.name;
