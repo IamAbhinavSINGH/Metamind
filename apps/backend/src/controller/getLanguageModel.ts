@@ -26,9 +26,9 @@ export const initializeModel = (isSearchEnabled : boolean) => {
     const claude37Sonnet = createAnthropicModel('claude-3-7-sonnet-20250219');
 
     const modelsToTry : { model : LanguageModelV1 , modelName : ModelType }[] = [
+        { model : geminiModel , modelName : 'gemini-2.0-flash-001' },
         { model : gemini25Preview , modelName : 'gemini-2.5-flash-preview-04-17' },
         { model : geminiThinkingModel , modelName : 'gemini-2.5-pro-exp-03-25' },
-        { model : geminiModel , modelName : 'gemini-2.0-flash-001' },
         { model : deepseekChatModel , modelName : 'deepseek-chat' },
         { model : deepseekReasoningModel , modelName : 'deepseek-reasoner' },
         { model : GPT4Model , modelName : 'gpt-4.0' },

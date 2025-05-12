@@ -106,7 +106,7 @@ export const handleRequest = async ({
 
         const attemptModelRequest = async (model : LanguageModelV1 , modelName : ModelType , ) => {
             try{
-                const success = await generateLLMResponse({ ...askRequestProps , model , modelId : modelName })
+                const success = await generateLLMResponse({ ...askRequestProps , model : model , modelId : modelName })
                 if(success) return true;
                 else return false;
             }catch(err){
@@ -121,7 +121,9 @@ export const handleRequest = async ({
         if(!success) { 
             expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response with model ${finalModel.modelName} retrying with ${modelsToTry[0].modelName}...` , modelID : finalModel.modelName })}\n\n`);
             success = await attemptModelRequest(modelsToTry[0].model , modelsToTry[0].modelName);
-            return false;
+
+            if(success) return true;
+            else return false;
         }
         
         return true;
