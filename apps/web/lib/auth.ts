@@ -165,7 +165,7 @@ export const authOptions : NextAuthOptions = {
     
     session : {
         strategy : 'jwt',
-        maxAge: 60 * 60,      // 1 hour
+        maxAge: 86400 ,      // 1 hour
         updateAge: 15 * 60,   // call session callback every 15 minutes
     },
 
@@ -233,7 +233,7 @@ export const authOptions : NextAuthOptions = {
                         customToken.userId = user.id || '';
                         customToken.name = user.name || '';
                         customToken.email = user.email || '';
-                        customToken.token = user.token || '';
+                        customToken.token = user.token || ''; 
                         customToken.image = customToken.image || null;
                     }
                 } catch(err) {

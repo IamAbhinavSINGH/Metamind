@@ -119,7 +119,8 @@ export const handleRequest = async ({
         var success = await attemptModelRequest(finalModel.model , finalModel.modelName);
 
         if(!success) { 
-            expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response with model ${finalModel.modelName}...` , modelID : finalModel.modelName })}\n\n`);
+            expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response with model ${finalModel.modelName} retrying with ${modelsToTry[0].modelName}...` , modelID : finalModel.modelName })}\n\n`);
+            success = await attemptModelRequest(modelsToTry[0].model , modelsToTry[0].modelName);
             return false;
         }
         
