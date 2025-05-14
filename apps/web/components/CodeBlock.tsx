@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState , useRef } from "react"
+import { useEffect, useState, useRef, memo } from "react"
 import { Check, Copy, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getHighlighter } from "@/lib/shiki"
-
+import { codeToHtml } from "shiki"
+ const { getHighlighter } = await import("@/lib/shiki")
 
 interface CodeBlockProps {
   code: string
@@ -15,167 +15,166 @@ interface CodeBlockProps {
   fileName?: string
 }
 
+// Use a simple pre-rendering approach for better performance
+export const CodeBlock = memo(
+  ({
+    code,
+    language = "plaintext",
+    theme = "dark-plus",
+    className,
+    showLineNumbers = true,
+    fileName,
+  }: CodeBlockProps) => {
+    const [copied, setCopied] = useState(false)
+    const codeRef = useRef<HTMLPreElement>(null)
+    const [isHighlighted, setIsHighlighted] = useState(false)
+    const isDark = theme === "dark-plus"
+    const [highlightError, setHighlightError] = useState(false)
 
-export const CodeBlock = ({
-  code,
-  language = "plaintext",
-  theme = "dark-plus",
-  className,
-  showLineNumbers = true,
-  fileName,
-}: CodeBlockProps) => {
-  const [html, setHtml] = useState<string>("");
-  const [copied, setCopied] = useState(false);
+    // Always show the raw code first, then try to highlight
+    useEffect(() => {
+      if (!codeRef.current) return
 
+      // Always set the raw code first to ensure content is visible
+      if (codeRef.current) {
+        codeRef.current.textContent = code
+      }
 
-  useEffect(() => {
-    let isMounted = true
-
-    const highlightCode = async () => {
-      if (!isMounted) return
-      try {
-        const highlighter = await getHighlighter()
-
-        // Load theme/language if needed
-        await Promise.all([
-          !highlighter.getLoadedThemes().includes(theme) && highlighter.loadTheme(theme),
-          !highlighter.getLoadedLanguages().includes(language as any) && highlighter.loadLanguage(language as any)
-        ])
-
-        const highlighted = highlighter.codeToHtml(code, {
-          lang: language,
-          theme: theme,
-          transformers: [
-            {
-              pre(node) {
-                const classNameArray = Array.isArray(node.properties.className)
-                  ? node.properties.className
-                  : typeof node.properties.className === "string"
-                    ? [node.properties.className]
-                    : []
-                node.properties.className = [...classNameArray, "code-block-pre overflow-auto"]
-                return node
-              },
-              code(node) {
-                const classNameArray = Array.isArray(node.properties.className)
-                  ? node.properties.className
-                  : node.properties.className
-                    ? [node.properties.className]
-                    : []
-                const validClassNames = classNameArray.filter(
-                  (cls) => typeof cls === "string" || typeof cls === "number",
-                )
-                node.properties.className = [...validClassNames, "code-block-code , overflow-auto"]
-                return node
-              },
-              line(node) {
-                const classNames = Array.isArray(node.properties.className)
-                  ? node.properties.className.filter((cls) => typeof cls === "string" || typeof cls === "number")
-                  : typeof node.properties.className === "string" || typeof node.properties.className === "number"
-                    ? [node.properties.className]
-                    : []
-                node.properties.className = [...classNames, "code-line , overflow-auto"]
-                return node
-              },
-            },
-          ],
-        })
-
-        if (isMounted) {
-          setHtml(highlighted)
+      // Then try to highlight it
+      const highlightCode = async () => {
+        if (!codeRef.current) {
+          console.log("early returning , coderef.current & isHighlighted : " , codeRef.current , isHighlighted);
+          return
         }
-      } catch (error) {
-        console.error("Error highlighting code:", error)
-        if (isMounted) {
-          setHtml(`<pre class="code-block-pre"><code class="code-block-code">${escapeHtml(code)}</code></pre>`)
+
+        try {
+          // Import the highlighter
+          const highlighter = await getHighlighter()
+
+          // Load theme/language if needed
+          await Promise.all([
+            !highlighter.getLoadedThemes().includes(theme) && highlighter.loadTheme(theme),
+            !highlighter.getLoadedLanguages().includes(language as any) && highlighter.loadLanguage(language as any),
+          ])
+          
+          // const highlighted = highlighter.codeToHtml(code, {
+          //   lang: language,
+          //   theme: theme,
+          // })
+
+          const highlighted = await codeToHtml(code , { lang : language , theme });
+
+          if (codeRef.current) {
+            codeRef.current.innerHTML = highlighted
+            setIsHighlighted(true)
+          }
+        } catch (error) {
+          console.error("Error highlighting code:", error)
+          setHighlightError(true)
+          // Keep the raw code visible
         }
       }
+
+      // // Use IntersectionObserver to only highlight when visible
+      // const observer = new IntersectionObserver(
+      //   (entries) => {
+      //     if (entries[0]?.isIntersecting && !isHighlighted) {
+      //       highlightCode()
+      //     }
+      //   },
+      //   { threshold: 0.1 },
+      // )
+
+      // observer.observe(codeRef.current)
+      // return () => observer.disconnect()
+
+      highlightCode();
+    }, [code, language, theme, isHighlighted])
+
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
 
-    highlightCode();
-
-    return () => {
-      isMounted = false
+    const downloadCode = () => {
+      const blob = new Blob([code], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = fileName || `code.${getFileExtension(language)}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     }
-  }, [code, language, theme])
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  const downloadCode = () => {
-    const blob = new Blob([code], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = fileName || `code.${getFileExtension(language)}`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div
-      className={cn(
-        "relative rounded-lg overflow-hidden border border-border my-4 group",
-        theme === "dark-plus" ? "bg-[#1E1E1E]" : "bg-[#FFFFFF]",
-        className,
-      )}
-    >
-      {/* Header with language and actions */}
+    return (
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-2 text-sm border-b border-border",
-          theme === "dark-plus" ? "bg-sidebar-border/90 text-gray-100" : "bg-[#F3F3F3] text-gray-700",
+          "relative rounded-lg overflow-hidden border border-border w-full max-w-full",
+          isDark ? "bg-[#1E1E1E]" : "bg-[#FFFFFF]",
+          className,
         )}
       >
-        <div className="flex items-center gap-2">
-          {fileName ? (
-            <span className="font-medium">{fileName}</span>
-          ) : (
-            <span className="font-medium">{getLanguageDisplayName(language)}</span>
+        {/* Header with language and actions */}
+        <div
+          className={cn(
+            "flex items-center justify-between px-4 py-2 text-sm border-b border-border",
+            isDark ? "bg-sidebar-border/90 text-gray-100" : "bg-[#F3F3F3] text-gray-700",
           )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={copyToClipboard}
-            className={cn(
-              "p-1.5 rounded-md transition-colors",
-              theme === "dark-plus" ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
+        >
+          <div className="flex items-center gap-2 truncate">
+            {fileName ? (
+              <span className="font-medium truncate">{fileName}</span>
+            ) : (
+              <span className="font-medium">{getLanguageDisplayName(language)}</span>
             )}
-            aria-label="Copy code"
-            title="Copy code"
-          >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-          </button>
-          <button
-            onClick={downloadCode}
-            className={cn(
-              "p-1.5 rounded-md transition-colors",
-              theme === "dark-plus" ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
-            )}
-            aria-label="Download code"
-            title="Download code"
-          >
-            <Download size={16} />
-          </button>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={copyToClipboard}
+              className={cn(
+                "p-1.5 rounded-md transition-colors",
+                isDark ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
+              )}
+              aria-label="Copy code"
+              title="Copy code"
+            >
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+            <button
+              onClick={downloadCode}
+              className={cn(
+                "p-1.5 rounded-md transition-colors",
+                isDark ? "hover:bg-stone-700 text-gray-200" : "hover:bg-gray-200 text-gray-700",
+              )}
+              aria-label="Download code"
+              title="Download code"
+            >
+              <Download size={16} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="relative px-6 py-6 overflow-auto scrollbar-thin">
-        {html && (
-          <div
-            className={cn("text-xs font-mono", showLineNumbers && "line-numbers")}
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        )}
+        <div className="relative overflow-auto scrollbar-thin max-w-full">
+          <pre
+            ref={codeRef}
+            className={cn(
+              "p-4 text-sm font-mono whitespace-pre overflow-x-auto",
+              isDark ? "text-gray-300" : "text-gray-800",
+              !isHighlighted && !highlightError && "animate-pulse",
+            )}
+          >
+            {/* The code content will be set via useEffect */}
+          </pre>
+        </div>
       </div>
-    </div>
-  );
-}
+    )
+  },
+)
+
+CodeBlock.displayName = "CodeBlock"
 
 // Helper functions
 function getLanguageDisplayName(language: string): string {
@@ -201,7 +200,6 @@ function getLanguageDisplayName(language: string): string {
     swift: "Swift",
     kotlin: "Kotlin",
     plaintext: "Plain Text",
-    // Add more languages as needed
   }
 
   return languageMap[language] || language.charAt(0).toUpperCase() + language.slice(1)
@@ -228,17 +226,7 @@ function getFileExtension(language: string): string {
     ruby: "rb",
     swift: "swift",
     kotlin: "kt",
-    // Add more extensions as needed
   }
 
   return extensionMap[language] || "txt"
-}
-
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;")
 }

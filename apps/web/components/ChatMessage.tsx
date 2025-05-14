@@ -61,14 +61,14 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                   )
                 }
               </div>
-              <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 h-fit p-4 text-accent-foreground">
+              <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 p-4 h-fit text-accent-foreground">
                   <MarkdownRenderer content={message.prompt} className="text-foreground overflow-auto"/>
               </div>
             </div>
 
             {
               (message.error && (!message.response || message.response.length === 0)) && 
-                <div className="w-fit px-4 mt-4 rounded-lg border bg-red-950">
+                <div className="w-fit px-4 mt-4 rounded-lg border bg-pink-900">
                     <MarkdownRenderer 
                       key={`error-${message.id}`}
                       content={message.error || ''} 
@@ -90,8 +90,8 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
             {(message.sources && message.sources.length > 0) && <MessageSources sources={message.sources} />}
 
             {  
-              <div className={` ${(isLast && message.response) ? 'visible' : 'invisible'} transition-all duration-400 ease-in-out w-full 
-                      flex items-center justify-between ${message.response && 'group-hover:visible'} `}>
+              <div className={` ${(isLast && message.finishReason) ? 'visible' : 'invisible'} transition-all duration-400 ease-in-out w-full 
+                      flex items-center justify-between ${message.finishReason && 'group-hover:visible'} `}>
                   
                   <MessageInfoComponent message={message} onDeleteClicked={onDeleteClicked} />
                   <div className="text-sm text-muted-foreground">
