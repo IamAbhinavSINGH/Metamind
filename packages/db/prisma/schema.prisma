@@ -51,6 +51,8 @@ model Message {
   totalTokens       BigInt?
   responseTime      Int?
   liked             Boolean?
+  includeSearch     Boolean     @default(false)
+  includeImage      Boolean     @default(false)
   attachments       Attachment[]
   sources           MessageSource[]
 }

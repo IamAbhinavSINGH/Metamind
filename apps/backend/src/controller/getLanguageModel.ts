@@ -12,6 +12,7 @@ export const initializeModel = (isSearchEnabled : boolean) => {
     const geminiModel = createGoogleModel('gemini-2.0-flash-001' , { useSearchGrounding : isSearchEnabled});
     const gemini25Preview = createGoogleModel('gemini-2.5-flash-preview-04-17' , { useSearchGrounding : isSearchEnabled });
     const geminiThinkingModel = createGoogleModel('gemini-2.5-pro-exp-03-25' , { useSearchGrounding : isSearchEnabled });
+    const googleImageGen = createGoogleModel('gemini-2.0-flash-exp' , { useSearchGrounding : isSearchEnabled });
 
     const createDeepseekModel = createDeepSeek({ apiKey: process.env.DEEPSEEK_KEY });
 
@@ -29,6 +30,7 @@ export const initializeModel = (isSearchEnabled : boolean) => {
         { model : geminiModel , modelName : 'gemini-2.0-flash-001' },
         { model : gemini25Preview , modelName : 'gemini-2.5-flash-preview-04-17' },
         { model : geminiThinkingModel , modelName : 'gemini-2.5-pro-exp-03-25' },
+        { model : googleImageGen , modelName : 'gemini-2.0-flash-exp' },
         { model : deepseekChatModel , modelName : 'deepseek-chat' },
         { model : deepseekReasoningModel , modelName : 'deepseek-reasoner' },
         { model : GPT4Model , modelName : 'gpt-4.0' },

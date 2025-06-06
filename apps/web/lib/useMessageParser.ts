@@ -101,7 +101,6 @@ export const useMessageParser = ({
         }, [setMessages]),
 
         onChatMetadata : useCallback((chatMetadata : ChatMetadataCallbackProps) => {
-            console.log("chatMetadata : " , chatMetadata);
             setChatName(chatMetadata.chatId , chatMetadata.chatName);
         } , [setMessages]),
 

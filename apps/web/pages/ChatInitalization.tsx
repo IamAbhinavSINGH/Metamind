@@ -10,7 +10,9 @@ import { Attachment } from '@/lib/getResponse';
 interface CreateChatRequestBody{
     prompt : string,
     modelName : string,
-    attachments? : Attachment[]
+    attachments? : Attachment[],
+    includeSearch? : boolean,
+    includeImage? : boolean
 }
 
 interface ChatInitializationProps {
@@ -24,13 +26,15 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
     const [isLoading , setIsLoading] = useState<boolean>(false);
 
     const handleSubmit = async(props : PromptSubmitProps) => {
-        const { prompt , selectedModel , files } = props;
+        const { prompt , selectedModel , files , isSearchEnabled , includeImage } = props;
         try{
             setIsLoading(true);
             const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/create`;
             const dataToSend : CreateChatRequestBody  = {
                 prompt : prompt,
                 modelName : selectedModel.modelId,
+                includeSearch : isSearchEnabled,
+                includeImage : includeImage
             }
 
             if(files && files.length > 0){
@@ -53,7 +57,7 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
             const chatId = response.data.chatId;
 
             if(response.status === 200 && response.data){
-                router.push(`/chat/${chatId}?redirected=true&model=${selectedModel.modelId}`);
+                router.push(`/chat/${chatId}?redirected=true`);
             }
 
         }catch(err){

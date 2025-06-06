@@ -4,19 +4,6 @@ import { ModelType } from "@repo/types"
 import { SessionContextValue } from "next-auth/react"
 import { Dispatch, SetStateAction } from "react";
 
-interface GetResponseProps{
-    chatId : string;
-    prompt : string;
-    selectedModel : ModelType;
-    isRedirected : boolean;
-    session : SessionContextValue;
-    attachments? : Attachment[] | FileMetaData[],
-    setIsLoading : (prev : any) => void;
-    setMessages : (prev : any) => void;
-    isSearchEnabled : boolean,
-    parseStream : (reader : ReadableStreamDefaultReader<Uint8Array>) => Promise<void>;
-}
-
 interface RequestMessage{
     role : 'user' | 'assistant',
     content : string,
@@ -30,7 +17,8 @@ interface GetResponseRequest{
     chatId : string,
     modelParams : {
         includeSearch : boolean,
-        includeReasoning : boolean
+        includeReasoning : boolean,
+        includeImage : boolean
     },
     redirected : boolean
 }
@@ -41,6 +29,8 @@ interface GetMessageResponseProps{
     selectedModel : ModelType;
     isRedirected : boolean;
     isSearchEnabled : boolean,
+    includeImage : boolean;
+    includeReasoning : boolean;
     session : SessionContextValue;
     parseStream : (reader : ReadableStreamDefaultReader<Uint8Array>) => Promise<void>;
 }
@@ -64,7 +54,9 @@ interface SubmitPromptProps{
     chatId : string,
     parseStream : (reader : ReadableStreamDefaultReader<Uint8Array>) => Promise<void>,
     attachments : FileMetaData[] | Attachment[] | undefined,
-    isSearchEnabled : boolean
+    isSearchEnabled : boolean,
+    includeImage? : boolean,
+    includeReasoning : boolean
 }
 
 export const submitPrompt = async({
@@ -78,7 +70,9 @@ export const submitPrompt = async({
     chatId ,
     parseStream ,
     attachments ,
-    isSearchEnabled 
+    isSearchEnabled ,
+    includeImage = false,
+    includeReasoning = false
 } : SubmitPromptProps) => {
     try{
         if(!prompt || prompt.trim().length === 0 || !session.data) return false;
@@ -172,7 +166,9 @@ export const submitPrompt = async({
             selectedModel : selectedModel,
             isRedirected : isRedirected,
             parseStream : parseStream,
-            isSearchEnabled : isSearchEnabled
+            isSearchEnabled : isSearchEnabled,
+            includeImage : includeImage || false,
+            includeReasoning : includeReasoning
         });
 
     }catch(err){
@@ -189,6 +185,8 @@ export const getMessageResponse = async ({
     isRedirected,
     parseStream,
     isSearchEnabled = false,
+    includeImage = false,
+    includeReasoning = false
 } : GetMessageResponseProps) => {
     try{
         if(!session.data) return null;
@@ -227,8 +225,9 @@ export const getMessageResponse = async ({
             redirected: isRedirected,
             messages : requestMessages,
             modelParams : {
-                includeReasoning : true,
-                includeSearch : isSearchEnabled
+                includeReasoning : includeReasoning,
+                includeSearch : isSearchEnabled,
+                includeImage : includeImage
             },
             model : selectedModel
         };

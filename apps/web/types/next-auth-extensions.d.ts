@@ -36,8 +36,10 @@ export interface Message {
     finishReason? : string | null,
     modelName? : string | null,
     attachments? : Attachment[] | null
-    sources?: MessageSource[];
-    error?: string; // New field for error messages
+    sources?: MessageSource[],
+    error?: string, // New field for error messages
+    includeSearch?: boolean,
+    includeImage?: boolean,
 }
 
 export interface MessageSource{

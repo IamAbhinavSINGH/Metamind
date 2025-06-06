@@ -5,6 +5,7 @@ export const AI_MODELS = [
     'gemini-2.0-flash-001',
     "gemini-2.5-flash-preview-04-17",
     "gemini-2.5-pro-exp-03-25",
+    'gemini-2.0-flash-exp',
     "deepseek-chat",
     "deepseek-reasoner",
     "gpt-4.0",
@@ -33,6 +34,7 @@ export const messageSchema = z.object({
 export const modelParamsSchema = z.object({
   includeSearch : z.boolean(),
   includeReasoning : z.boolean(),
+  includeImage : z.boolean().optional(),
 })
 
 export const chatSchema = z.object({

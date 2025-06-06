@@ -48,6 +48,8 @@ interface InsertMessageProps{
     promptTokens : number,
     totalTokens : number,
     responseTime : number,
+    includeSearch? : boolean,
+    includeImage? : boolean,
     sources? : MessageSource[],
     attachments? : FileMetaData[]
 }
@@ -156,7 +158,6 @@ export const createNewChat = async (chatProps : CreateChatProps) => {
     }
 }
 
-// Initialize a chat with the name "New Chat" which gets updated when the user asks a query
 export const createNewChatWithoutName = async ({ userId } : { userId : string }) => {
     try{
 
@@ -248,7 +249,9 @@ export const getMessagesByChatId = async (chatId : string , userId : string) => 
                 finishReason : true,
                 modelName : true,
                 attachments : true,
-                sources : true
+                sources : true,
+                includeImage : true,
+                includeSearch : true,
             }
         });
 
@@ -300,13 +303,22 @@ export const updateChatName = async (chatId : string , chatName : string) => {
     }
 }
 
-export const storeUserPrompt = async(chatId : string , userPrompt : string , modelName : ModelType , attachments? : FileMetaData[]) => {
+export const storeUserPrompt = async(
+    chatId : string , 
+    userPrompt : string , 
+    modelName : ModelType , 
+    includeSearch? : boolean,
+    includeImage? : boolean,
+    attachments? : FileMetaData[]
+) => {
     try{
         const message = await db.message.create({ 
             data : {
                 chatId : chatId,
                 prompt : userPrompt,
                 modelName : modelName,
+                includeImage : includeImage || false,
+                includeSearch : includeSearch || false,
                 attachments : attachments ? {
                     create : attachments.map((file) => ({
                         fileName : file.fileName,
@@ -390,6 +402,8 @@ export const insertFinalMessage = async ({
     promptTokens,
     totalTokens,
     responseTime,
+    includeImage = false,
+    includeSearch = false,
     sources,
     attachments
 } : InsertMessageProps) => {
@@ -401,6 +415,8 @@ export const insertFinalMessage = async ({
                 prompt : prompt,
                 responseTime : responseTime || 0,
                 modelName : modelName,
+                includeImage : includeImage,
+                includeSearch : includeSearch,
                 finishReason : finishReason,
                 reasoning : reasoning,
                 completionTokens : completionTokens,

@@ -1,6 +1,7 @@
+import { ModelType } from "@repo/types";
 
 interface ModelDescription {
-    modelName : string,
+    modelName : ModelType,
     modelDescription : string
 }
 
@@ -20,6 +21,10 @@ const availableModels: ModelDescription[] = [
       modelDescription: `Google’s Gemini family "thinking" variant that provides a bit more internal reasoning.
         It’s better than the pro model for tasks requiring a higher level of logical processing and step-by-step analysis,
         though it may not be as specialized for heavy coding challenges.`
+    },
+    {
+      modelName: 'gemini-2.0-flash-exp',
+      modelDescription: `It is simple model which can provide multimodal outputs, hence it can also generate images along with texts.`
     },
     {
       modelName: 'deepseek-reasoner',
@@ -59,8 +64,9 @@ export const systemPrompt = `
     ### **Your Role:**
     1. **Model Selection:**  
     - Your task is to evaluate the user's prompt and select the best AI model from the available list.
-    - Each model has specific strengths, such as coding, general knowledge, reasoning, or web access.
+    - Each model has specific strengths, such as coding, general knowledge, reasoning, image generation or web access.
     - Refer to the provided descriptions to make an informed decision.
+    - If the user is asking to generate an image then only choose the model which supports image generation.
 
     ### **Guidelines:**
     - **Only return the model name in JSON format.**

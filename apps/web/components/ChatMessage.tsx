@@ -11,6 +11,8 @@ import { Attachment } from "@/lib/getResponse";
 import { SessionContextValue, useSession } from "next-auth/react";
 import axios from "axios";
 import MessageSources from "./MessageSource";
+import MessageDeleteModal from "./MessageDeleteModal";
+import ReasoningMessage from "./ReasoningMessage";
 
 
 type UsageDropdownProps = {
@@ -20,14 +22,17 @@ type UsageDropdownProps = {
 type ChatMessageProps = {
     message: Message;
     isLast: boolean;
+    chatId: string;
     onDeleteClicked: (id: string) => void;
 };
 
-const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps ) => {
+const ChatMessage = ({ message , isLast, onDeleteClicked , chatId } : ChatMessageProps ) => {
     const divRef = useRef<HTMLDivElement | null>(null);
     const currentModel = modelList.find((item) => item.modelId === message?.modelName);
     const [files , setFiles] = useState<{ attachment : Attachment, readURL : string }[]>([]);
     const session = useSession();
+    const [deleteClicked , setDeleteClicked] = useState<boolean>(false);
+    const [showReasoning, setShowReasoning] = useState<boolean>(false);
 
     useEffect(() => {
       const fetchURLs = async () => {
@@ -61,14 +66,14 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                   )
                 }
               </div>
-              <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 p-4 h-fit text-accent-foreground">
+              <div className="w-fit max-w-[70%] rounded-2xl bg-sidebar-border/70 p-4 h-fit">
                   <MarkdownRenderer content={message.prompt} className="text-foreground overflow-auto"/>
               </div>
             </div>
 
             {
               (message.error && (!message.response || message.response.length === 0)) && 
-                <div className="w-fit px-4 mt-4 rounded-lg border bg-pink-900">
+                <div className="w-fit px-4 rounded-lg border bg-pink-900">
                     <MarkdownRenderer 
                       key={`error-${message.id}`}
                       content={message.error || ''} 
@@ -77,8 +82,14 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
                 </div>
             }
 
+            <ReasoningMessage 
+              reasoning={message.reasoning}
+              showReasoning={showReasoning}
+              onToggle={() => setShowReasoning(!showReasoning)}
+            />
+
             {message.response && 
-                <div className="w-full mt-4 text-foreground">
+                <div className={`w-full text-foreground ${(!showReasoning && !message.reasoning) ? 'mt-4' : ''}`}>
                     <MarkdownRenderer 
                       key={`markdown-${message.id}`}
                       content={message.response || ''} 
@@ -90,14 +101,24 @@ const ChatMessage = ({ message , isLast, onDeleteClicked ,} : ChatMessageProps )
             {(message.sources && message.sources.length > 0) && <MessageSources sources={message.sources} />}
 
             {  
-              <div className={` ${(isLast && message.finishReason) ? 'visible' : 'invisible'} transition-all duration-400 ease-in-out w-full 
+              <div className={` ${(isLast && message.finishReason) ? 'visible' : 'invisible'} transition-all mt-2 duration-400 ease-in-out w-full 
                       flex items-center justify-between ${message.finishReason && 'group-hover:visible'} `}>
                   
-                  <MessageInfoComponent message={message} onDeleteClicked={onDeleteClicked} />
+                  <MessageInfoComponent message={message} onDeleteClicked={() => setDeleteClicked(true)} />
                   <div className="text-sm text-muted-foreground">
                       generated with {currentModel ? currentModel.modelName : message.modelName}
                   </div>
               </div>
+            }
+
+            {
+              (deleteClicked && message?.id !== undefined && message.id !== null) && 
+              <MessageDeleteModal 
+                chatId={chatId} 
+                message={message} 
+                onClose={() => setDeleteClicked(false)} 
+                onDeleteSuccess={() => onDeleteClicked(message?.id || '')} 
+              />
             }
         </div>
     );

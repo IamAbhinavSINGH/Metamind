@@ -99,7 +99,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
     h6: ({ node, ...props } :  { node : any }) => (
       <h6 className="scroll-m-20 text-base font-semibold tracking-tight mb-4 mt-6" {...props} />
     ),
-    p: ({ node, ...props } :  { node : any }) => <p className="leading-7 [&:not(:first-child)]:mt-4 mb-4" {...props} />,
+    p: ({ node, ...props } :  { node : any }) => <p className="leading-7" {...props} />,
     a: ({ node, ...props } :  { node : any }) => (
       <a
         className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"

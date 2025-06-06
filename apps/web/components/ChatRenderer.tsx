@@ -5,7 +5,6 @@ import { Message } from "@/types/next-auth-extensions";
 import { useSession } from "next-auth/react";
 import { LoadingIndicator } from "./LoadingSpinner";
 import { modelList } from "@/lib/available-models";
-import axios from "axios";
 import { ModelType } from "@repo/types";
 import { submitPrompt } from "@/lib/getResponse";
 import { useMessageParser } from "@/lib/useMessageParser";
@@ -18,51 +17,33 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
   chatId : string , 
   refresh : () => void 
 }) => {
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isLoading , setIsLoading] = useState<boolean>(false);
   const session = useSession();
   const { parseStream } = useMessageParser({ setIsLoading , setMessages });
 
   const handleChatInput = async (props : PromptSubmitProps) => {
-    const { prompt  , selectedModel, files , isSearchEnabled  } = props;
+    const { prompt  , selectedModel, files , isSearchEnabled , includeImage , includeReasoning  } = props;
 
     if(!prompt || prompt.length === 0 || !session.data) return;
     const model = selectedModel.modelId as ModelType;
 
     await submitPrompt({
-      setMessages,
-      messages,
-      prompt,
+      setMessages : setMessages,
+      messages : messages,
+      prompt : prompt,
       selectedModel : model,
-      setIsLoading,
+      setIsLoading : setIsLoading,
       isRedirected : false,
-      session,
-      chatId,
-      parseStream,
+      session : session,
+      chatId : chatId,
+      parseStream : parseStream,
       attachments : files,
-      isSearchEnabled
+      isSearchEnabled : isSearchEnabled,
+      includeImage : includeImage,
+      includeReasoning : includeReasoning
     })
   };
-
-  const handleMessageDelete = async (messageId : string) => {
-    try{
-      if(!session.data || !messageId) return;
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/message`;
-
-      const response = await axios.delete(url , {
-        params : { messageId : messageId , chatId : chatId },
-        headers : { "Authorization" : `Bearer ${session.data?.user.token}` }
-      });
-
-      if(response.status === 200) refresh();
-      else  alert("Could not delete the message!!");
-
-    }catch(err){
-      console.log("An error occured while deleting the message : " , err);
-      alert("Could not delete the message!!");
-    }
-  }
 
   useEffect(() => {
     const getResponseforFirstMessage = async () => {
@@ -71,6 +52,8 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
 
       const prompt = messages[0]?.prompt;
       const model = messages[0]?.modelName as ModelType || 'auto';
+      const includeSearch = messages[0]?.includeSearch || false;
+      const includeImage = messages[0]?.includeImage || false; ;
       if(!prompt || prompt.length === 0) return;
 
       await submitPrompt({
@@ -84,15 +67,17 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
         chatId,
         parseStream,
         attachments : messages[0]?.attachments || [],
-        isSearchEnabled :false
-      })
+        isSearchEnabled :includeSearch,
+        includeImage : includeImage,
+        includeReasoning : true
+      });
     }
 
     getResponseforFirstMessage();
   } , [session.status]);
 
-   const handleModelChange = (model : string) => {
-    }
+  const handleModelChange = (model : string) => {
+  }
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -108,7 +93,6 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
   }, [messages, isLoading]);
 
   useEffect(() => {
-    // mutation observer to detect changes in the chat container
     const observer = new MutationObserver(() => {
       if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight 
     })
@@ -137,7 +121,8 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
               <ChatMessage 
                 key={index} 
                 message={message}
-                onDeleteClicked={handleMessageDelete} 
+                chatId={chatId}
+                onDeleteClicked={() => refresh()} 
                 isLast={index === messages.length-1}
               />
             ))

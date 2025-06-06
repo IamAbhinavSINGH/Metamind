@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { Paperclip, X, FileText, Image, Film, File, SendIcon, Globe } from "lucide-react"
+import { Paperclip, X, FileText, Image, Film, File, SendIcon, Globe, Sparkle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,9 @@ export interface PromptSubmitProps {
   prompt : string,
   selectedModel : ModelSchema,
   files? : FileMetaData[],
-  isSearchEnabled : boolean
+  isSearchEnabled : boolean,
+  includeImage? : boolean,
+  includeReasoning : boolean
 }
 
 interface ChatInputProps {
@@ -45,6 +47,8 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedModel , setSelectedModel] = useState<ModelSchema>(initialModel ? initialModel : modelList[0]!);
   const [isSearchEnabled , setIsSearchEnabled] = useState<boolean>(false);
+  const [includeImage , setIncludeImage] = useState<boolean>(false);
+  const [includeReasoning , setIncludeReasoning] = useState<boolean>(false);
   const session = useSession();
 
   // Auto-resize the textarea as user types
@@ -90,7 +94,7 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (prompt.trim() === "" && files.length === 0) return
-    onPromptSubmit({prompt, selectedModel , files , isSearchEnabled});
+    onPromptSubmit({prompt, selectedModel , files , isSearchEnabled , includeImage , includeReasoning});
     setPrompt("")
     setFiles([]);
   }
@@ -193,10 +197,19 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
                       setSelectedModel={handleModelChange}
                   />
 
-                  <SearchButton isSearchEnabled={isSearchEnabled} toggleSearch={(e) =>{
-                    e.preventDefault();
-                    setIsSearchEnabled((prev) => !prev) 
-                  }}/>
+                  <div className="w-full md:ml-4 flex items-center justify-start gap-1">
+                      <SearchButton isSearchEnabled={isSearchEnabled} toggleSearch={(e) =>{
+                          e.preventDefault();
+                          setIsSearchEnabled((prev) => !prev) 
+                        }}
+                      />
+
+                      <ReasoningButton includeReasoning={includeReasoning} toggleReasoning={(e) => {
+                          e.preventDefault();
+                          setIncludeReasoning((prev) => !prev);
+                        }}
+                      />
+                  </div>
 
                   <div className="w-full flex items-end justify-end gap-2">
                       <Button
@@ -245,14 +258,27 @@ const SearchButton = ({ isSearchEnabled , toggleSearch } : { isSearchEnabled : b
   return (
     <button 
       type="button"
-      className={`w-fit h-fit cursor-pointer px-3 py-2 text-sm rounded-full border border-border flex items-center justify-center gap-2 ${isSearchEnabled && 'bg-sky-800 opacity-100 text-sky-200'}`}
+      className={`w-fit h-fit cursor-pointer px-1 py-2 text-sm rounded-full transition-all duration-100 ease-in-out flex items-center justify-center group gap-1`}
       onClick={toggleSearch}
     >
-      <Globe className={`w-4 h-4 ${isSearchEnabled ? 'text-sky-200' : 'text-white'}`} />
-      Search
+      <Globe className={`w-4 h-4 ${isSearchEnabled ? 'text-sky-500' : 'text-primary'}`} />
+      <span className={`hidden md:block ${isSearchEnabled ? 'text-sky-500 ' : 'text-primary'}`} >Search </span>
     </button>
   );
 
+}
+
+const ReasoningButton = ({ includeReasoning , toggleReasoning } : { includeReasoning : boolean , toggleReasoning : (e : any) => void }) => {
+  return (
+    <button 
+      type="button"
+      className={`w-fit h-fit cursor-pointer px-2 py-2 text-sm rounded-full duration-100 transition-all ease-in-out flex items-center justify-center group gap-1`}
+      onClick={toggleReasoning}
+    >
+      <Sparkle className={`w-4 h-4 ${includeReasoning ? 'text-sky-500' : 'text-primary'}`} />
+      <span className={`hidden md:block ${includeReasoning ? 'text-sky-500 ' : 'text-primary'}`} >Reasoning</span>
+    </button>
+  );
 }
 
 const SelectModel = ({ 
