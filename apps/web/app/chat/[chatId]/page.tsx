@@ -8,9 +8,7 @@ import { useEffect , useState } from "react";
 import { Message, MessageSource } from "@/types/next-auth-extensions";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import ChatInput from "@/components/ChatInput";
-import { modelList } from "@/lib/available-models";
 import React from "react";
-import { ModelType } from "@repo/types";
 
 
 export default function (){
@@ -20,7 +18,6 @@ export default function (){
     const session = useSession();
     const searchParams = useSearchParams();
     const redirected = searchParams?.get("redirected") || null;
-    const initialModel = searchParams?.get("model") as ModelType || modelList[0];
     const [messages , setMessages] = useState<Message[]>([]);
     const [isFalseChat , setIsFalseChat] = useState<boolean>(false);
     const [isLoading , setIsLoading] = useState<boolean>(false);
@@ -40,12 +37,11 @@ export default function (){
 
             if(response.status === 200 && response.data.messages){
                 const newMessages = response.data.messages;
-                // Only update if messages have changed
                 if (JSON.stringify(newMessages) !== JSON.stringify(messages)) {
-                    setMessages([...newMessages.map((_message : any) => {
+                    setMessages([...newMessages.map((_message : Message) => {
                         return {
                             ..._message,
-                            sources : _message?.sources.map((_source : any) => {
+                            sources : _message?.sources?.map((_source : any) => {
                                 return {
                                     sourceType : _source.sourceType || '',
                                     id : _source.sourceId || '',
@@ -95,8 +91,6 @@ export default function (){
             <div className='w-full h-full flex flex-col pb-10 bg-accent'>
                 <div className='flex-1 w-full h-full flex items-center justify-center'>
                     <ChatInput 
-                        modelList={modelList}
-                        initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                         onPromptSubmit={() => {}}
                     />
                 </div>
@@ -111,8 +105,6 @@ export default function (){
                 </div>
                 <div className="sticky bottom-0 bg-accent">
                     <ChatInput
-                        initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
-                        modelList={modelList}
                         isLoading={isLoading}
                         onPromptSubmit={() => {}}
                     />
@@ -128,7 +120,6 @@ export default function (){
                 messages={messages} 
                 setMessages={setMessages}
                 chatId={chatId}
-                initialModel={initialModel}
             />
         </div>
     );

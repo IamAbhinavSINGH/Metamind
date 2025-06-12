@@ -252,6 +252,7 @@ export const getMessagesByChatId = async (chatId : string , userId : string) => 
                 sources : true,
                 includeImage : true,
                 includeSearch : true,
+                includeReasoning : true
             }
         });
 
@@ -309,6 +310,7 @@ export const storeUserPrompt = async(
     modelName : ModelType , 
     includeSearch? : boolean,
     includeImage? : boolean,
+    includeReasoning? : boolean,
     attachments? : FileMetaData[]
 ) => {
     try{
@@ -319,6 +321,7 @@ export const storeUserPrompt = async(
                 modelName : modelName,
                 includeImage : includeImage || false,
                 includeSearch : includeSearch || false,
+                includeReasoning : includeReasoning || false,
                 attachments : attachments ? {
                     create : attachments.map((file) => ({
                         fileName : file.fileName,

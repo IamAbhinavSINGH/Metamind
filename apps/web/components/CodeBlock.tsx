@@ -112,7 +112,7 @@ export const CodeBlock = memo(
     return (
       <div
         className={cn(
-          "relative rounded-lg overflow-hidden border border-border w-full max-w-full",
+          "relative rounded-lg my-4 overflow-hidden border border-border w-full max-w-full",
           isDark ? "bg-[#1E1E1E]" : "bg-[#FFFFFF]",
           className,
         )}

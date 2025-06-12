@@ -40,6 +40,7 @@ export interface Message {
     error?: string, // New field for error messages
     includeSearch?: boolean,
     includeImage?: boolean,
+    includeReasoning?: boolean,
 }
 
 export interface MessageSource{

@@ -53,7 +53,7 @@ const MessageSources = ({ sources }: { sources: MessageSource[] | undefined  }) 
   
           {/* Collapsed view - only show logos */}
           {!isExpanded && (
-            <div className="flex -space-x-2 overflow-hidden" onClick={() => setIsExpanded(!isExpanded)}>
+            <div className="flex -space-x-2 z-0 overflow-hidden" onClick={() => setIsExpanded(!isExpanded)}>
               {sources.slice(0, 4).map((source, index) => (
                 <div
                   key={source.id}
@@ -72,9 +72,7 @@ const MessageSources = ({ sources }: { sources: MessageSource[] | undefined  }) 
               ))}
               {sources.length > 4 && (
                 <div
-                  className="w-6 h-6 rounded-full border border-border bg-sidebar-border flex items-center justify-center text-xs text-muted-foreground"
-                  style={{ zIndex: 0 }}
-                >
+                  className="w-6 h-6 rounded-full z-0 border border-border bg-sidebar-border flex items-center justify-center text-xs text-muted-foreground"                >
                   +{sources.length - 4}
                 </div>
               )}

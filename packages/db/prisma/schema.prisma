@@ -50,6 +50,7 @@ model Message {
   promptTokens      BigInt?
   totalTokens       BigInt?
   responseTime      Int?
+  includeReasoning  Boolean     @default(false)
   liked             Boolean?
   includeSearch     Boolean     @default(false)
   includeImage      Boolean     @default(false)

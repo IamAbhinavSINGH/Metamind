@@ -8,10 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { DropdownMenu } from "./ui/dropdown-menu"
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ModelSchema } from "@/lib/available-models"
 import { LoadingSpinner } from "./LoadingSpinner"
 import axios from "axios"
 import { useSession } from "next-auth/react"
+import { ModelSchema , ModelList, ModelType } from "@repo/types"
+import { useSearchParams } from "next/navigation"
+import ModelSelectionModal from "./ModelSelection"
 
 export interface PromptSubmitProps {
   prompt : string,
@@ -23,10 +25,7 @@ export interface PromptSubmitProps {
 }
 
 interface ChatInputProps {
-  modelList: ModelSchema[]
-  initialModel : ModelSchema | null
   onPromptSubmit: (props : PromptSubmitProps) => void
-  maxLength?: number,
   isLoading?: boolean,
   onModelChange? : (model : string) => void
 }
@@ -40,12 +39,14 @@ export interface FileMetaData{
 }
 
 
-export default function ChatInput({ modelList, initialModel , onPromptSubmit, maxLength = 4000 , isLoading , onModelChange }: ChatInputProps) {
+export default function ChatInput({ onPromptSubmit , isLoading , onModelChange }: ChatInputProps) {
   const [prompt, setPrompt] = useState<string>("");
   const [files, setFiles] = useState<FileMetaData[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedModel , setSelectedModel] = useState<ModelSchema>(initialModel ? initialModel : modelList[0]!);
+  const searchParams = useSearchParams();
+  const initialModel = searchParams?.get("model") as ModelType || ModelList[0]?.modelId;
+  const [selectedModel , setSelectedModel] = useState<ModelSchema>(ModelList.find((item) => item.modelId === initialModel)!);
   const [isSearchEnabled , setIsSearchEnabled] = useState<boolean>(false);
   const [includeImage , setIncludeImage] = useState<boolean>(false);
   const [includeReasoning , setIncludeReasoning] = useState<boolean>(false);
@@ -176,23 +177,20 @@ export default function ChatInput({ modelList, initialModel , onPromptSubmit, ma
                       )}
                   >
                       <textarea
-                          ref={textareaRef}
-                          className="w-full min-h-10 transparent-scrollbar resize-none text-accent-foreground placeholder:text-muted-foreground focus:outline-none text-base"
-                          placeholder="Ask anything"
-                          value={prompt}
-                          onKeyDown={handleTextareaKeyDown}
-                          onChange={(e) => {
-                              if (maxLength && e.target.value.length > maxLength) return
-                              setPrompt(e.target.value)
-                          }}
-                          rows={1}
+                        ref={textareaRef}
+                        className="w-full min-h-10 transparent-scrollbar resize-none text-accent-foreground placeholder:text-muted-foreground focus:outline-none text-base"
+                        placeholder="Ask anything"
+                        value={prompt}
+                        onKeyDown={handleTextareaKeyDown}
+                        onChange={(e) => setPrompt(e.target.value) }
+                        rows={1}
                       />
                   </ScrollArea>
               </div>
               <input ref={fileInputRef} type="file" multiple onChange={handleFileChange} className="hidden" />
               <div className="w-full flex items-center justify-between gap-2 mb-2">
-                  <SelectModel 
-                      modelList={modelList}
+                  <ModelSelectionModal 
+                      modelList={ModelList}
                       selectedModel={selectedModel}
                       setSelectedModel={handleModelChange}
                   />

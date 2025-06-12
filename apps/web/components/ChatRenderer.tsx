@@ -4,15 +4,13 @@ import ChatInput, { PromptSubmitProps } from "./ChatInput";
 import { Message } from "@/types/next-auth-extensions";
 import { useSession } from "next-auth/react";
 import { LoadingIndicator } from "./LoadingSpinner";
-import { modelList } from "@/lib/available-models";
 import { ModelType } from "@repo/types";
 import { submitPrompt } from "@/lib/getResponse";
 import { useMessageParser } from "@/lib/useMessageParser";
 
 
-const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: { 
+const ChatRenderer = ({ messages, setMessages, chatId, refresh }: { 
   messages: Message[] ,
-  initialModel : ModelType,
   setMessages : React.Dispatch<React.SetStateAction<Message[]>>, 
   chatId : string , 
   refresh : () => void 
@@ -53,7 +51,8 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
       const prompt = messages[0]?.prompt;
       const model = messages[0]?.modelName as ModelType || 'auto';
       const includeSearch = messages[0]?.includeSearch || false;
-      const includeImage = messages[0]?.includeImage || false; ;
+      const includeImage = messages[0]?.includeImage || false; 
+      const includeReasoning = messages[0]?.includeReasoning || false;
       if(!prompt || prompt.length === 0) return;
 
       await submitPrompt({
@@ -69,7 +68,7 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
         attachments : messages[0]?.attachments || [],
         isSearchEnabled :includeSearch,
         includeImage : includeImage,
-        includeReasoning : true
+        includeReasoning : includeReasoning
       });
     }
 
@@ -139,8 +138,6 @@ const ChatRenderer = ({ messages, setMessages, chatId, refresh, initialModel }: 
       <div className="w-full max-w-4xl mx-auto bg-accent sticky bottom-0">
         <ChatInput
           isLoading={isLoading}
-          modelList={modelList}
-          initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
           onPromptSubmit={handleChatInput}
           onModelChange={handleModelChange}
         />

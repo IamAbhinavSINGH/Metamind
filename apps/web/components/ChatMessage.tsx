@@ -1,10 +1,9 @@
-import { Message, MessageSource } from "@/types/next-auth-extensions";
+import { Message } from "@/types/next-auth-extensions";
 import React from "react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { Button } from "./ui/button";
-import { BadgeInfo, CheckCheck, Copy, ExternalLink, File, FileText, FileTextIcon, Film, Image, Trash } from "lucide-react";
+import { BadgeInfo, CheckCheck, Copy, File, FileTextIcon, Film, Image, Trash } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { modelList } from "@/lib/available-models";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger , DropdownMenuItem } from "./ui/dropdown-menu";
 import { memo } from "react";
 import { Attachment } from "@/lib/getResponse";
@@ -13,6 +12,7 @@ import axios from "axios";
 import MessageSources from "./MessageSource";
 import MessageDeleteModal from "./MessageDeleteModal";
 import ReasoningMessage from "./ReasoningMessage";
+import { ModelList } from "@repo/types";
 
 
 type UsageDropdownProps = {
@@ -28,7 +28,7 @@ type ChatMessageProps = {
 
 const ChatMessage = ({ message , isLast, onDeleteClicked , chatId } : ChatMessageProps ) => {
     const divRef = useRef<HTMLDivElement | null>(null);
-    const currentModel = modelList.find((item) => item.modelId === message?.modelName);
+    const currentModel = ModelList.find((item) => item.modelId === message?.modelName);
     const [files , setFiles] = useState<{ attachment : Attachment, readURL : string }[]>([]);
     const session = useSession();
     const [deleteClicked , setDeleteClicked] = useState<boolean>(false);

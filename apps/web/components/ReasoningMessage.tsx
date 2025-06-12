@@ -31,7 +31,7 @@ const ReasoningMessage = ({
             </button>
             {
                 <div className={`w-full pl-4 text-primary/80 border-l ${showReasoning ? 'block' : 'hidden'} transition-all duration-300 ease-in-out`}>
-                    <MarkdownRenderer content={reasoning} className='font-extralight text-sm' />
+                    <MarkdownRenderer content={reasoning} className='font-light text-sm' />
                 </div>
             }
         </div>

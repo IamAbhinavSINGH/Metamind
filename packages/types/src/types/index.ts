@@ -13,8 +13,8 @@ export const AI_MODELS = [
     "claude-3-7-sonnet-20250219",
   ] as const;
 
-export const ModelSchema = z.enum(AI_MODELS);
-export type ModelType = z.infer<typeof ModelSchema>;
+export const AvailaibleModels = z.enum(AI_MODELS);
+export type ModelType = z.infer<typeof AvailaibleModels>;
 
 export const attachmentModel = z.object({
   fileName : z.string(),
@@ -39,7 +39,7 @@ export const modelParamsSchema = z.object({
 
 export const chatSchema = z.object({
   messages : z.array(messageSchema),
-  model : ModelSchema,
+  model : AvailaibleModels,
   chatId : z.string(),
   modelParams : modelParamsSchema,
   redirected : z.boolean()

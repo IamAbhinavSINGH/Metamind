@@ -4,7 +4,6 @@ import { ModelType } from '@repo/types'
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { modelList, ModelSchema } from '@/lib/available-models';
 import { Attachment } from '@/lib/getResponse';
 
 interface CreateChatRequestBody{
@@ -70,8 +69,6 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
         <div className='w-full h-full flex-1 flex flex-col pb-10'>
             <div className='flex-1 w-full h-full flex items-center justify-center'>
                 <ChatInput 
-                    modelList={modelList}
-                    initialModel={modelList.find((item) => item.modelId === initialModel) || modelList[0]!} 
                     onPromptSubmit={handleSubmit} 
                     onModelChange={onModelChange}
                     isLoading={isLoading}

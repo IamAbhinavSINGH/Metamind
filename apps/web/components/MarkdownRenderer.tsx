@@ -1,23 +1,23 @@
 "use client"
 
-import { useEffect, useRef, useState, memo } from "react"
+import { memo } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import rehypeRaw from "rehype-raw"
 import { cn } from "@/lib/utils"
 import { useTheme } from "@/lib/providers/ThemeProvider"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CodeBlock } from "./CodeBlock"
+import { parseMarkdownIntoBlocks } from "@/lib/content-parser"
 
 interface MarkdownRendererProps {
   content: string
   className?: string
 }
 
-// Create a memoized version of the component to prevent unnecessary re-renders
-const MemoizedMarkdown = memo(
-  ({ content, components, className }: { content: string; components: any; className: string }) => (
+// Memoized component for rendering STABLE markdown blocks.
+// It will only re-render if its specific `content` prop changes.
+const MemoizedMarkdownBlock = memo(
+  ({ content, components }: { content: string; components: any }) => (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeRaw]}
@@ -27,185 +27,131 @@ const MemoizedMarkdown = memo(
     </ReactMarkdown>
   ),
 )
+MemoizedMarkdownBlock.displayName = "MemoizedMarkdownBlock"
 
-MemoizedMarkdown.displayName = "MemoizedMarkdown"
+const MemoizedCodeBlock = memo(CodeBlock)
+MemoizedCodeBlock.displayName = "MemoizedCodeBlock"
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   const { theme } = useTheme()
   const isDarkTheme = theme === "dark"
-  const [stableContent, setStableContent] = useState(content)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const visibilityRef = useRef(true)
-
-  // Handle content updates with debouncing
-  useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-
-    // Only update content if the component is visible
-    if (visibilityRef.current) {
-      timeoutRef.current = setTimeout(() => {
-        setStableContent(content)
-      }, 10)
-    }
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [content])
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      visibilityRef.current = document.visibilityState === "visible"
-
-      // If becoming visible and content has changed, update it
-      if (visibilityRef.current && content !== stableContent) {
-        setStableContent(content)
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-    }
-  }, [content, stableContent])
 
   const markdownComponents = {
-    h1: ({ node, ...props } : { node : any }) => (
-      <h1
-        className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mb-6 mt-8 text-primary"
-        {...props}
-      />
+    h1: ({ node, ...props }: { node: any }) => (
+      <h1 className="mt-6 mb-4 font-semibold text-4xl pb-3 border-b border-gray-200" {...props} />
     ),
-    h2: ({ node, ...props } : { node : any } ) => (
-      <h2
-        className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0 mb-4 mt-8 text-primary"
-        {...props}
-      />
+    h2: ({ node, ...props }: { node: any }) => (
+      <h2 className="mt-6 mb-4 font-semibold text-3xl pb-3 border-b border-gray-200" {...props} />
     ),
-    h3: ({ node, ...props } :  { node : any }) => (
-      <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight mb-4 mt-6 text-primary" {...props} />
+    h3: ({ node, ...props } : { node : any }) => (
+      <h3 className="mt-6 mb-4 font-semibold text-2xl" {...props} />
     ),
-    h4: ({ node, ...props } :  { node : any }) => (
-      <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4 mt-6" {...props} />
+    h4: ({ node, ...props } : { node : any }) => (
+        <h4 className="mt-6 mb-4 font-semibold text-xl" {...props} />
     ),
-    h5: ({ node, ...props } :  { node : any }) => (
-      <h5 className="scroll-m-20 text-lg font-semibold tracking-tight mb-4 mt-6" {...props} />
+    h5: ({ node, ...props } : { node : any }) => (
+        <h5 className="mt-6 mb-4 font-semibold text-lg" {...props} />
     ),
-    h6: ({ node, ...props } :  { node : any }) => (
-      <h6 className="scroll-m-20 text-base font-semibold tracking-tight mb-4 mt-6" {...props} />
+    h6: ({ node, ...props } : { node : any }) => (
+      <h6 className="mt-6 mb-4 font-semibold text-base text-gray-500" {...props} />
     ),
-    p: ({ node, ...props } :  { node : any }) => <p className="leading-7" {...props} />,
-    a: ({ node, ...props } :  { node : any }) => (
-      <a
-        className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
-        target="_blank"
-        rel="noopener noreferrer"
-        {...props}
-      />
+    p: ({ node, ...props } : { node : any }) => (
+      <p className="mb-4 leading-relaxed" {...props} />
     ),
-    ul: ({ node, ...props } :  { node : any }) => <ul className="my-6 ml-6 list-disc [&>li]:mt-2" {...props} />,
-    ol: ({ node, ...props } :  { node : any }) => <ol className="my-6 ml-6 list-decimal [&>li]:mt-2" {...props} />,
-    li: ({ node, ...props } :  { node : any }) => <li className="leading-7" {...props} />,
-    blockquote: ({ node, ...props } :  { node : any }) => (
-      <blockquote className="mt-6 border-l-4 border-primary pl-6 italic text-muted-foreground" {...props} />
+    a: ({ node, ...props } : { node : any }) => (
+      <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
     ),
-    hr: ({ node, ...props } :  { node : any }) => <hr className="my-6 border-border" {...props} />,
+    blockquote: ({ node, ...props } : { node : any }) => (
+      <blockquote className="my-4 pl-4 text-gray-500 border-l-4 border-gray-200" {...props} />
+    ),
+    hr: ({ node, ...props } : { node : any }) => (
+      <hr className="my-6 h-1 bg-gray-200 border-0" {...props} />
+    ),
     img: ({ node, ...props } : React.ImgHTMLAttributes<HTMLImageElement> & { node: any }) => (
-      <img
-        className="rounded-md border border-border my-8 max-w-full h-auto shadow-md"
-        loading="lazy"
-        {...props}
-        alt={props.alt || "Image"}
-      />
+      <img className="max-w-full my-4 bg-white" loading="lazy" {...props} alt={props.alt || "Image"} />
     ),
-    table: ({ node, ...props } :  { node : any }) => (
-      <div className="my-6 w-full overflow-y-auto rounded-md border">
-        <table className="w-full border-collapse text-sm" {...props} />
+    ul: ({ node, ...props }: { node: any }) => (
+        <ul className="my-4 ml-6 list-disc [&>li]:mt-2" {...props} />
+    ),
+    ol: ({ node, ...props }: { node: any }) => (
+        <ol className="my-4 ml-6 list-decimal [&>li]:mt-2" {...props} />
+    ),
+    li: ({ node, ...props }: { node: any }) => <li {...props} />,
+    table: ({ node, ...props } : { node : any }) => (
+      <div className="my-4 w-full overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-200" {...props} />
       </div>
     ),
-    thead: ({ node, ...props } :  { node : any }) => <thead className="bg-muted/50" {...props} />,
-    tbody: ({ node, ...props } :  { node : any }) => <tbody className="divide-y divide-border" {...props} />,
-    tr: ({ node, ...props } :  { node : any }) => <tr className="m-0 p-0 even:bg-muted/20" {...props} />,
-    th: ({ node, ...props } :  { node : any }) => (
-      <th
-        className="border-b border-border px-4 py-3 text-left font-medium [&[align=center]]:text-center [&[align=right]]:text-right"
-        {...props}
-      />
+    thead: ({ node, ...props } : { node : any }) => <thead {...props} />,
+    tbody: ({ node, ...props } : { node : any }) => <tbody {...props} />,
+    tr: ({ node, ...props } : { node : any }) => (
+      <tr className="bg-white border-t border-gray-200 even:bg-gray-50" {...props} />
+    ),
+    th: ({ node, ...props } : { node : any }) => (
+      <th className="px-5 py-3 font-semibold text-left border border-gray-200" {...props} />
     ),
     td: ({ node, ...props } : { node : any } ) => (
-      <td
-        className="border-b border-border px-4 py-3 text-left [&[align=center]]:text-center [&[align=right]]:text-right"
-        {...props}
-      />
+      <td className="px-5 py-3 text-left border border-gray-200" {...props} />
     ),
-    pre: ({ node, children, ...props } : { node : any , children : any }) => <div className="not-prose bg-transparent p-0">{children}</div>,
-   code: ({ node, className, children, ...props }: { node: any; className: string; children: any }) => {
-      const match = /language-(\w+)/.exec(className || "")
-
+    pre: ({ children }: { children: any }) => <div className="not-prose bg-transparent p-0">{children}</div>,
+    code: ({ node, className, children, ...props }: { node: any; className?: string; children: any }) => {
+      const match = /language-(\w+)/.exec(className || "");
       if (match) {
-        const codeContent = String(children).replace(/\n$/, "")
-
-        // Only render if we have content
-        return codeContent ? (
-          <CodeBlock
-            code={codeContent}
-            language={match[1]}
-            theme={isDarkTheme ? "dark-plus" : "light-plus"}
-            className=""
-            showLineNumbers={true}
-          />
-        ) : (
-          <div className="my-6 p-4 border border-border rounded-lg bg-muted text-center">Empty code block</div>
-        )
+        // This case is now less likely to be hit for large blocks, but we keep it as a fallback.
+        return <CodeBlock code={String(children).replace(/\n$/, "")} language={match[1]} theme={isDarkTheme ? "dark-plus" : "light-plus"} />;
       }
-
-      return (
-        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" {...props}>
-          {children}
-        </code>
-      )
+      return <code className="relative rounded bg-sidebar-border/80 px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold" {...props}>{children}</code>;
     },
-    details: ({ node, ...props } : { node : any , children : any } ) => (
-      <Accordion type="single" collapsible className="my-6 border rounded-lg overflow-hidden">
-        <AccordionItem value="details" className="border-0">
-          {props.children}
-        </AccordionItem>
-      </Accordion>
+   details: ({ node, ...props } : { node : any , children : any } ) => (
+      <details className="block my-4" {...props} />
     ),
     summary: ({ node, children, ...props } : { node: any; children: React.ReactNode } ) => (
-      <AccordionTrigger className="text-base font-medium px-4">{children}</AccordionTrigger>
+      <summary className="cursor-pointer list-item" {...props}>{children}</summary>
     ),
     div: ({ node, ...props }: { node: any; [key: string]: any }) => {
-      // Check if parent is details and this is not a summary
-      const isDetailsContent =
-        (node as any)?.parent?.tagName === "details" &&
-        node?.children?.every((child: { tagName: string }) =>
-          typeof child === "object" && "tagName" in child ? child.tagName !== "summary" : true,
-        )
+      const isDetailsContent = (node as any)?.parent?.tagName === "details" && node?.children?.every((child: { tagName: string }) =>
+        typeof child === "object" && "tagName" in child ? child.tagName !== "summary" : true )
 
       if (isDetailsContent) {
-        return <AccordionContent className="px-4">{props.children}</AccordionContent>
+        return <div {...props}>{props.children}</div>
       }
 
       return <div {...props} />
     },
     aside: ({ node, children, ...props }: { node: unknown; children: React.ReactNode; [key: string]: any }) => {
       return (
-        <Alert className="my-6">
-          <AlertDescription>{children}</AlertDescription>
-        </Alert>
+        <aside className="my-6 p-4 border-l-4 border-gray-200" {...props}>
+            {children}
+        </aside>
       )
-    },
-  }
+    }
+  };
+
+  const blocks = parseMarkdownIntoBlocks(content)
 
   return (
     <div className={cn("markdown-renderer prose prose-stone dark:prose-invert max-w-none", className)}>
-      <MemoizedMarkdown content={stableContent} components={markdownComponents} className="w-full max-w-full" />
+      {blocks.map(block => {
+        if (block.type === 'code') {
+          return (
+            <MemoizedCodeBlock
+              key={block.key}
+              code={block.content}
+              language={block.language}
+              theme={isDarkTheme ? "dark-plus" : "light-plus"}
+              showLineNumbers={true}
+            />
+          )
+        }
+        
+        return (
+          <MemoizedMarkdownBlock
+            key={block.key}
+            content={block.content}
+            components={markdownComponents}
+          />
+        )
+      })}
     </div>
   )
 }

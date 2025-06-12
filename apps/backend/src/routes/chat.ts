@@ -14,7 +14,8 @@ const createChatScehma = z.object({
     modelName : z.enum(AI_MODELS),
     attachments : z.array(attachmentModel).optional(),
     includeSearch : z.boolean().optional(),
-    includeImage : z.boolean().optional()
+    includeImage : z.boolean().optional(),
+    includeReasoning : z.boolean().optional()
 });
 
 
@@ -148,7 +149,7 @@ chatRouter.post('/create' , async (req : AuthRequest , res : Response) => {
 
         handleChatName({ chatId : chat.id , prompt : body.prompt });
 
-        const message = await storeUserPrompt(chat.id, body.prompt , body.modelName , body.includeSearch , body.includeImage, body.attachments);
+        const message = await storeUserPrompt(chat.id, body.prompt , body.modelName , body.includeSearch , body.includeImage, body.includeReasoning, body.attachments);
         if(!message || message == null) throw new Error("Transaction failed: Could not create chat");
 
         res.json({ chatId: chat.id, chatName: chat.name });
