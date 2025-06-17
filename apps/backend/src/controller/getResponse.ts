@@ -84,58 +84,151 @@ interface HandleChatNameProps{
     prompt : string
 }
 
+// export const handleRequest = async ({
+//     messages,
+//     includeReasoning,
+//     includeSearch,
+//     expressResponse,
+//     model,
+//     chatId
+// } : HandleRequestProps) => {
+//     try{
+//         const pastMessages = await convertRequestMessagesToCoreMessages(messages);
+
+//         const startTime = performance.now();
+//         const modelId = await chooseModel({ messages : pastMessages, model , includeSearch });
+//         if(modelId === null) return null;
+
+//         const askRequestProps = { 
+//             messages : pastMessages,
+//             chatId : chatId,
+//             expressResponse : expressResponse,
+//             startTime : startTime,
+//             includeSearch : includeSearch,
+//             includeReasoning : includeReasoning,
+//             prompt : messages[messages.length-1].content,
+//             attachments : messages[messages.length-1]?.attachments
+//         }
+//         const { modelsToTry } = initializeModel( includeSearch );
+
+//         const attemptModelRequest = async (model : LanguageModelV1 , modelName : ModelType , ) => {
+//             try{
+//                 const success = await generateLLMResponse({ ...askRequestProps , model : model , modelId : modelName } as GenerateLLMResponseProps)
+//                 if(success) return true;
+//                 else return false;
+//             }catch(err){
+//                 console.error(`Error with model ${modelName}:`, err);
+//                 return false;
+//             }
+//         }
+
+//         const finalModel = modelsToTry.find((m) => m.modelName === modelId) || modelsToTry[0];
+//         var success = await attemptModelRequest(finalModel.model , finalModel.modelName);
+
+//         if(!success) { 
+//             expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response with model ${finalModel.modelName} retrying with ${modelsToTry[0].modelName}...` , modelID : finalModel.modelName })}\n\n`);
+//             success = await attemptModelRequest(modelsToTry[0].model , modelsToTry[0].modelName);
+
+//             if(success) return true;
+//             else return false;
+//         }
+        
+//         return true;
+//     }catch(err){
+//         console.log("An error occured while generating response : " , err);
+//         return false;
+//     }
+// }
+
+
 export const handleRequest = async ({
     messages,
     includeReasoning,
     includeSearch,
     expressResponse,
-    model,
+    model, // This is the user's preferred model or 'auto'
     chatId
 } : HandleRequestProps) => {
-    try{
+    try {
         const pastMessages = await convertRequestMessagesToCoreMessages(messages);
-
         const startTime = performance.now();
-        const modelId = await chooseModel({ messages : pastMessages, model , includeSearch });
-        if(modelId === null) return null;
+        const { modelsToTry } = initializeModel(includeSearch);
 
-        const askRequestProps = { 
-            messages : pastMessages,
-            chatId : chatId,
-            expressResponse : expressResponse,
-            startTime : startTime,
-            includeSearch : includeSearch,
-            includeReasoning : includeReasoning,
-            prompt : messages[messages.length-1].content,
-            attachments : messages[messages.length-1]?.attachments
-        }
-        const { modelsToTry } = initializeModel( includeSearch );
-
-        const attemptModelRequest = async (model : LanguageModelV1 , modelName : ModelType , ) => {
-            try{
-                const success = await generateLLMResponse({ ...askRequestProps , model : model , modelId : modelName } as GenerateLLMResponseProps)
-                if(success) return true;
-                else return false;
-            }catch(err){
-                console.error(`Error with model ${modelName}:`, err);
+        // Determine the initial model to try based on user preference or auto-selection
+        let initialModelToUse: ModelType | null = model;
+        if (model === 'auto') {
+            initialModelToUse = await chooseModel({ messages: pastMessages, model, includeSearch });
+            if (initialModelToUse === null) {
+                console.error("Failed to choose an initial model.");
+                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: "Failed to select a suitable model." })}\n\n`);
                 return false;
             }
         }
 
-        const finalModel = modelsToTry.find((m) => m.modelName === modelId) || modelsToTry[0];
-        var success = await attemptModelRequest(finalModel.model , finalModel.modelName);
+        const askRequestProps = {
+            messages: pastMessages,
+            chatId: chatId,
+            expressResponse: expressResponse,
+            startTime: startTime,
+            includeSearch: includeSearch,
+            includeReasoning: includeReasoning,
+            prompt: messages[messages.length - 1].content,
+            attachments: messages[messages.length - 1]?.attachments
+        };
 
-        if(!success) { 
-            expressResponse.write(`data: ${JSON.stringify({ type: 'error', content : `Couldn't get response with model ${finalModel.modelName} retrying with ${modelsToTry[0].modelName}...` , modelID : finalModel.modelName })}\n\n`);
-            success = await attemptModelRequest(modelsToTry[0].model , modelsToTry[0].modelName);
+        let success = false;
+        let attemptedModels: ModelType[] = [];
 
-            if(success) return true;
-            else return false;
+        // Prioritize the initially chosen model or the user-specified one
+        const orderedModelsToTry = [];
+        if (initialModelToUse) {
+            const chosenModelEntry = modelsToTry.find(m => m.modelName === initialModelToUse);
+            if (chosenModelEntry) {
+                orderedModelsToTry.push(chosenModelEntry);
+            }
         }
-        
-        return true;
-    }catch(err){
-        console.log("An error occured while generating response : " , err);
+        // Add the rest of the models, ensuring no duplicates if initialModelToUse was already added
+        for (const m of modelsToTry) {
+            if (!orderedModelsToTry.some(om => om.modelName === m.modelName)) {
+                orderedModelsToTry.push(m);
+            }
+        }
+
+        for (const { model: currentModelInstance, modelName: currentModelName } of orderedModelsToTry) {
+            if (attemptedModels.includes(currentModelName)) {
+                continue; // Skip if already attempted in this loop
+            }
+
+            console.log(`Attempting to generate response with model: ${currentModelName}`);
+            expressResponse.write(`data: ${JSON.stringify({ type: 'status', content: `Trying model: ${currentModelName}...` })}\n\n`);
+            attemptedModels.push(currentModelName);
+
+            try {
+                success = await generateLLMResponse({
+                    ...askRequestProps,
+                    model: currentModelInstance,
+                    modelId: currentModelName
+                } as GenerateLLMResponseProps);
+
+                if (success) {
+                    console.log(`Successfully generated response with model: ${currentModelName}`);
+                    return true; // Exit on first successful response
+                }
+            } catch (err) {
+                console.error(`Error with model ${currentModelName}:`, err);
+                const idx = orderedModelsToTry.findIndex((item) => item.modelName === currentModelName);
+                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: `Error with ${currentModelName}. ${idx < currentModelName.length-1 ? `Retrying with ${orderedModelsToTry[idx+1].modelName}...` : ''}` })}\n\n`);
+            }
+        }
+
+        console.error("All models failed to generate a response.");
+        expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: "Sorry, I couldn't generate a response at this time. Please try again later." })}\n\n`);
+        return false;
+
+    } catch (err) {
+        console.error("An error occurred while handling the request:", err);
+        expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: `Unknown error occured` })}\n\n`);
+        expressResponse.end();
         return false;
     }
 }
@@ -152,76 +245,71 @@ const generateLLMResponse = async({
     includeSearch = false,
     includeReasoning = false
 } : GenerateLLMResponseProps) => {
-    try{
-        var success = true;
+    var success = true;
 
-        const stream = streamText({
-            model : model,
-            messages : messages,
-            providerOptions : {
-                google: { 
-                    thinkingConfig : { 
-                        thinkingBudget : model.modelId === 'gemini-2.0-flash-001' ? 0 : 24576 ,
-                        includeThoughts : includeReasoning
-                    } 
-                } satisfies GoogleGenerativeAIProviderOptions,
-            },
+    const stream = streamText({
+        model : model,
+        messages : messages,
+        providerOptions : {
+            google: { 
+                thinkingConfig : { 
+                    thinkingBudget : model.modelId === 'gemini-2.0-flash-001' ? 0 : 24576 ,
+                    includeThoughts : includeReasoning
+                } 
+            } satisfies GoogleGenerativeAIProviderOptions,
+        },
 
-            onChunk({ chunk }){
-                if(chunk.type === 'reasoning'){
-                    expressResponse.write(`data: ${JSON.stringify({ type: 'reasoning', content: chunk.textDelta })}\n\n`);
-                }
-                else if(chunk.type === 'text-delta'){
-                    expressResponse.write(`data: ${JSON.stringify({ type: 'response', content: `${chunk.textDelta} ` })}\n\n`);
-                }
-                else if(chunk.type === 'source'){
-                    expressResponse.write(`data: ${JSON.stringify({ type: 'source', content: chunk.source })}\n\n`);
-                }
-            },
-
-            onFinish : async ({ finishReason , reasoning , text , usage , sources  }) => {
-                success = await onFinishCallback({
-                    finishReason : finishReason,
-                    reasoning : reasoning,
-                    text : text,
-                    usage : usage,
-                    attachments : attachments,
-                    chatId : chatId,
-                    startTime : startTime,
-                    modelId : modelId,
-                    expressResponse : expressResponse,
-                    sources : sources,
-                    prompt : prompt,
-                    includeImage : false,
-                    includeSearch : includeSearch
-                });
-            },
-
-            onError : ({ error }) => {
-                console.log("An error occured while generating response : " , error);
-                success = false;
+        onChunk({ chunk }){
+            if(chunk.type === 'reasoning'){
+                expressResponse.write(`data: ${JSON.stringify({ type: 'reasoning', content: chunk.textDelta })}\n\n`);
             }
-        })
-
-        var fullResponse = "";
-
-        for await (const delta of stream.textStream){
-            fullResponse += delta;
-        }
-
-        for (const file of await stream.files){
-            console.log('file response : ' , file);
-            if(file.mimeType.startsWith('image/')){
-                saveImage(file);
+            else if(chunk.type === 'text-delta'){
+                expressResponse.write(`data: ${JSON.stringify({ type: 'response', content: chunk.textDelta })}\n\n`);
             }
-        }
+            else if(chunk.type === 'source'){
+                expressResponse.write(`data: ${JSON.stringify({ type: 'source', content: chunk.source })}\n\n`);
+            }
+        },
 
-        if(!success) return false;
-        return true;
-    }catch(err){
-        console.log("An error occured while fetching response using llm : " , err);
-        return false;
+        onFinish : async ({ finishReason , reasoning , text , usage , sources  }) => {
+            success = await onFinishCallback({
+                finishReason : finishReason,
+                reasoning : reasoning,
+                text : text,
+                usage : usage,
+                attachments : attachments,
+                chatId : chatId,
+                startTime : startTime,
+                modelId : modelId,
+                expressResponse : expressResponse,
+                sources : sources,
+                prompt : prompt,
+                includeImage : false,
+                includeSearch : includeSearch
+            });
+        },
+
+        onError : ({ error }) => {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            throw new Error(errorMessage);
+        }
+    })
+
+    var fullResponse = "";
+
+    for await (const delta of stream.textStream){
+        fullResponse += delta;
     }
+
+    for (const file of await stream.files){
+        console.log('file response : ' , file);
+        if(file.mimeType.startsWith('image/')){
+            saveImage(file);
+        }
+    }
+
+    if(!success) return false;
+    return true;
 }
 
 const saveImage = async (file : GeneratedFile) => {

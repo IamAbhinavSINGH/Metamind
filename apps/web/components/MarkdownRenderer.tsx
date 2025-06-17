@@ -56,7 +56,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
       <h6 className="mt-6 mb-4 font-semibold text-base text-gray-500" {...props} />
     ),
     p: ({ node, ...props } : { node : any }) => (
-      <p className="mb-4 leading-relaxed" {...props} />
+      <p className="leading-relaxed" {...props} />
     ),
     a: ({ node, ...props } : { node : any }) => (
       <a className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
