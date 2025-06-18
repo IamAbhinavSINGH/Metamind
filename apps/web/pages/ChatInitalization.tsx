@@ -11,7 +11,8 @@ interface CreateChatRequestBody{
     modelName : string,
     attachments? : Attachment[],
     includeSearch? : boolean,
-    includeImage? : boolean
+    includeImage? : boolean,
+    includeReasoning? : boolean
 }
 
 interface ChatInitializationProps {
@@ -25,7 +26,7 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
     const [isLoading , setIsLoading] = useState<boolean>(false);
 
     const handleSubmit = async(props : PromptSubmitProps) => {
-        const { prompt , selectedModel , files , isSearchEnabled , includeImage } = props;
+        const { prompt , selectedModel , files , isSearchEnabled , includeImage , includeReasoning } = props;
         try{
             setIsLoading(true);
             const url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/v1/chat/create`;
@@ -33,7 +34,8 @@ const ChatInitialization = ({ initialModel , onModelChange } : ChatInitializatio
                 prompt : prompt,
                 modelName : selectedModel.modelId,
                 includeSearch : isSearchEnabled,
-                includeImage : includeImage
+                includeImage : includeImage,
+                includeReasoning : includeReasoning
             }
 
             if(files && files.length > 0){

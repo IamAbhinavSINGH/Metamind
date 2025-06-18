@@ -84,49 +84,6 @@ export const getLastChats = async (chatId : string) : Promise<MessageType[]>  =>
     }
 }
 
-export const storeMessageResponse = async (messageProps : StoreMessageProps) => {
-    try{
-        const chat = await db.chat.findFirst({ where : { id : messageProps.chatId } });
-
-        if(!chat) return null;
-
-        const message = await db.message.update({
-            where : { id : messageProps.messageId },
-            data : {
-                chatId : messageProps.chatId,
-                response : messageProps.content,
-                modelName : messageProps.modelName,
-                reasoning : messageProps.reasoning,
-                finishReason : messageProps.finishReason,
-                completionTokens : messageProps.completionTokens,
-                promptTokens : messageProps.promptTokens,
-                totalTokens : messageProps.totalTokens,
-                responseTime : messageProps.responseTime || 0,
-                liked : false,
-                sources : (messageProps.sources && messageProps.sources.length > 0) ? {
-                    create : messageProps.sources.map((source) => ({
-                        sourceId : source.id,
-                        title : source.title,
-                        url : source.url,
-                        sourceType : source.sourceType
-                    }))
-                } : undefined
-            }
-        });
-
-        await db.chat.update({
-            where : { id : chat.id },
-            data : { lastUsedAt : new Date() }
-        });
-
-        return message;
-    }catch(err){
-        console.log("An error occured while storing a message : " , err);
-        return null;
-    }
-}
-
-
 export const getChat = async (chatId : string) => {
     try{
         const chat = await db.chat.findFirst({ where : { id : chatId } });
@@ -444,6 +401,11 @@ export const insertFinalMessage = async ({
                     }))
                 } : undefined
             }  
+        });
+
+        await db.chat.update({
+            where : { id : chatId },
+            data : { lastUsedAt : new Date() }
         });
 
         return message;

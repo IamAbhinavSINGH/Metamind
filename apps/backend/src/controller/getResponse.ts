@@ -160,7 +160,7 @@ export const handleRequest = async ({
             initialModelToUse = await chooseModel({ messages: pastMessages, model, includeSearch });
             if (initialModelToUse === null) {
                 console.error("Failed to choose an initial model.");
-                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: "Failed to select a suitable model." })}\n\n`);
+                expressResponse.write(`data: ${JSON.stringify({ type: 'error', content: "Failed to select a suitable model !!" })}\n\n`);
                 return false;
             }
         }

@@ -73,11 +73,11 @@ const ChatMessage = ({ message , isLast, onDeleteClicked , chatId } : ChatMessag
 
             {
               (message.error) && 
-                <div className="w-fit mt-4 rounded-lg border bg-rose-800 px-2 py-2 flex justify-center items-center">
+                <div className="w-full mt-4 rounded-lg border bg-rose-800 px-2 py-2 flex justify-start items-center">
                     <MarkdownRenderer 
                       key={`error-${message.id}`}
-                      content={message.error || 'Wasuuuppp nigga'} 
-                      className="overflow-auto text-secondary text-sm" 
+                      content={message.error || ''} 
+                      className="overflow-auto text-secondary font-light text-base" 
                     />
                 </div>
             }

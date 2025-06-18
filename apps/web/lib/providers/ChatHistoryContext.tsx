@@ -8,7 +8,7 @@ import React , { createContext , Dispatch, SetStateAction, useContext, useEffect
 interface ChatHistoryContextProps{
     chatHistory : ChatHistory[],
     refreshHistory : () => Promise<void>,
-    setChatName : (chatId : string , chatName : string) => void
+    setChatName : (chatId : string , chatName : string , lastUsedAt : number) => void
 }
 
 const initialValue : ChatHistoryContextProps = {
@@ -41,7 +41,13 @@ const fetchHistory = async (session : SessionContextValue , setChatHistory : Dis
     }
 }
 
-const updateChatHistory = (chatId : string , chatName : string , chatHistory : ChatHistory[] , setChatHistory : Dispatch<SetStateAction<ChatHistory[]>>) => {
+const updateChatHistory = (
+    chatId : string , 
+    chatName : string , 
+    lastUsedAt : number, 
+    chatHistory : ChatHistory[] , 
+    setChatHistory : Dispatch<SetStateAction<ChatHistory[]>>
+) => {
     const updatedChat = chatHistory.find((item) => item.id === chatId);
     if(updatedChat === undefined) return; 
     
@@ -50,17 +56,17 @@ const updateChatHistory = (chatId : string , chatName : string , chatHistory : C
         id : updatedChat.id,
         name : chatName,
         createdAt : updatedChat.createdAt,
-        lastUsedAt : updatedChat.lastUsedAt
+        lastUsedAt : new Date(lastUsedAt)
     }];
 
-    setChatHistory([...updatedHistory.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())]);
+    setChatHistory([...updatedHistory.sort((a,b) => b.lastUsedAt.getTime() - a.lastUsedAt.getTime())]);
 }
 
 export const ChatHistoryProvider = ({ children } : { children : React.ReactNode }) => {
     const [chatHistory , setChatHistory] = useState<ChatHistory[]>([]);
     const session = useSession();
     const refreshHistory = () => fetchHistory(session , setChatHistory);
-    const setChatName = (chatId : string , chatName : string) => updateChatHistory(chatId , chatName , chatHistory , setChatHistory);
+    const setChatName = (chatId : string , chatName : string , lastUsedAt : number) => updateChatHistory(chatId , chatName , lastUsedAt , chatHistory , setChatHistory);
 
     useEffect(() => { fetchHistory(session , setChatHistory); }, []);
 

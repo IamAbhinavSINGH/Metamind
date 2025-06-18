@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { ChatMetadataCallbackProps, MessageParser, MessageParserOptions, OnFinishCallbackProps, ParserCallbacks } from "./MessageParser";
+import { ChatMetadataCallbackProps, MessageParser, MessageParserOptions, OnDetailsCallbackProps, OnFinishCallbackProps, ParserCallbacks } from "./MessageParser";
 import { Message, MessageSource } from "@/types/next-auth-extensions";
 import { useChatHistory } from "./providers/ChatHistoryContext";
 
@@ -76,8 +76,7 @@ export const useMessageParser = ({
             })
         } , [setIsLoading , setMessages]),
 
-        onFinish : useCallback((details : OnFinishCallbackProps) => {
-            setIsLoading(false);
+        onDetails : useCallback((details : OnDetailsCallbackProps) => {
             setMessages((prev : Message[]) => {
                 if(prev.length === 0) return prev;
                 const lastIndex = prev.length-1;
@@ -100,8 +99,12 @@ export const useMessageParser = ({
             })
         }, [setMessages]),
 
+        onFinish : useCallback((finish : OnFinishCallbackProps) => {
+            setIsLoading(false);
+        }, [setMessages]),
+
         onChatMetadata : useCallback((chatMetadata : ChatMetadataCallbackProps) => {
-            setChatName(chatMetadata.chatId , chatMetadata.chatName);
+            setChatName(chatMetadata.chatId , chatMetadata.chatName , chatMetadata.lastUsedAt);
         } , [setMessages]),
 
         onError : useCallback((errorMessage : string) => {

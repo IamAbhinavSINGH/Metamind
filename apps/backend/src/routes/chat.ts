@@ -46,9 +46,9 @@ chatRouter.post('' , async (req : AuthRequest , res : Response) => {
             if(message !== null) isFirstRequestForThisChat = true;
         }
 
-        res.write(`data: ${JSON.stringify({ type: 'chat-metadata', content : { chatId : chat.id , chatName : chat.name } })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'chat-metadata', content : { chatId : chat.id , chatName : chat.name , lastUsedAt : new Date() } })}\n\n`);
 
-        await handleRequest({
+        const wasRequestSuccessfull = await handleRequest({
             messages : body.messages,
             includeReasoning : body.modelParams.includeReasoning,
             includeSearch : body.modelParams.includeSearch,
@@ -58,6 +58,7 @@ chatRouter.post('' , async (req : AuthRequest , res : Response) => {
             redirected : body.redirected
         });
 
+        res.write(`data: ${JSON.stringify({ type : 'finish' , content : { wasRequestSuccessfull : wasRequestSuccessfull } })}\n\n`);
         res.end();
         return;
 
