@@ -12,12 +12,12 @@ const availableModels: ModelDescription[] = [
         It natively calls tools (e.g., search, stream images/video in realtime) and is the default model for casual conversation.`
     },
     {
-      modelName: 'gemini-2.5-flash-preview-04-17',
+      modelName: 'gemini-2.5-flash',
       modelDescription: `A day-to-day model by Google that improves upon the general Gemini-2.0 in coding, math, and complex tasks.
         It is less focused on introspective "thinking" and more on delivering quick, accurate responses.`
     },
     {
-      modelName: 'gemini-2.5-pro-exp-03-25',
+      modelName: 'gemini-2.5-pro',
       modelDescription: `Google’s Gemini family "thinking" variant that provides a bit more internal reasoning.
         It’s better than the pro model for tasks requiring a higher level of logical processing and step-by-step analysis,
         though it may not be as specialized for heavy coding challenges.`

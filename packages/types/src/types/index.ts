@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const AI_MODELS = [
     "auto",
     'gemini-2.0-flash-001',
-    "gemini-2.5-flash-preview-04-17",
-    "gemini-2.5-pro-exp-03-25",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
     'gemini-2.0-flash-exp',
     "deepseek-chat",
     "deepseek-reasoner",

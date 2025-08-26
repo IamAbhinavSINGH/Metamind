@@ -59,13 +59,13 @@ export const ModelList: ModelSchema[] = [
     },
     {
       modelName: 'Gemini 2.5 Flash Preview',
-      modelId: 'gemini-2.5-flash-preview-04-17',
+      modelId: 'gemini-2.5-flash',
       modelDescription: 'Enhanced reasoning',
       features: [Features.Reasoning , Features.Search, Features.Image]
     },
     {
       modelName: 'Gemini 2.5 Pro',
-      modelId: 'gemini-2.5-pro-exp-03-25',
+      modelId: 'gemini-2.5-pro',
       modelDescription: 'Day-to-day performance',
       features: [Features.Reasoning , Features.Search]
     },

@@ -9,9 +9,9 @@ import { LanguageModelV1 } from "ai";
 export const initializeModel = (isSearchEnabled : boolean) => {
     const createGoogleModel = createGoogleGenerativeAI({ apiKey: process.env.GEMINI_KEY || '' });
 
-    const geminiModel = createGoogleModel('gemini-2.0-flash-001' , { useSearchGrounding : isSearchEnabled});
-    const gemini25Preview = createGoogleModel('gemini-2.5-flash-preview-04-17' , { useSearchGrounding : isSearchEnabled });
-    const geminiThinkingModel = createGoogleModel('gemini-2.5-pro-exp-03-25' , { useSearchGrounding : isSearchEnabled });
+    const geminiModel = createGoogleModel('gemini-2.0-flash' , { useSearchGrounding : isSearchEnabled});
+    const gemini25Preview = createGoogleModel('gemini-2.5-flash' , { useSearchGrounding : isSearchEnabled });
+    const geminiThinkingModel = createGoogleModel('gemini-2.5-pro' , { useSearchGrounding : isSearchEnabled });
     const googleImageGen = createGoogleModel('gemini-2.0-flash-exp' , { useSearchGrounding : isSearchEnabled });
 
     const createDeepseekModel = createDeepSeek({ apiKey: process.env.DEEPSEEK_KEY || '' });
@@ -28,8 +28,8 @@ export const initializeModel = (isSearchEnabled : boolean) => {
 
     const modelsToTry : { model : LanguageModelV1 , modelName : ModelType }[] = [
         { model : geminiModel , modelName : 'gemini-2.0-flash-001' },
-        { model : gemini25Preview , modelName : 'gemini-2.5-flash-preview-04-17' },
-        { model : geminiThinkingModel , modelName : 'gemini-2.5-pro-exp-03-25' },
+        { model : gemini25Preview , modelName : 'gemini-2.5-flash' },
+        { model : geminiThinkingModel , modelName : 'gemini-2.5-pro' },
         { model : googleImageGen , modelName : 'gemini-2.0-flash-exp' },
         { model : deepseekChatModel , modelName : 'deepseek-chat' },
         { model : deepseekReasoningModel , modelName : 'deepseek-reasoner' },
